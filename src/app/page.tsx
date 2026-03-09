@@ -1,9 +1,21 @@
 "use client";
-
+import { useAuth } from "@/context/AuthContext";
+import { signOut } from "@/utils/auth";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getFreelancers } from "@/utils/storage";
 import { Freelancer } from "@/types";
+import {
+  Search,
+  MapPin,
+  MessageSquare,
+  ExternalLink,
+  LogOut,
+  Plus,
+  User,
+  CheckCircle,
+  X
+} from "lucide-react";
 
 const CATEGORIES = [
   "All", "Technology", "Design", "Writing", "Marketing",
@@ -18,30 +30,24 @@ const NIGERIAN_STATES = [
   "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara",
 ];
 
-// ── Seed data so directory is never empty ──
 const SEED_FREELANCERS: Freelancer[] = [
-  { id: "seed-1", name: "Amara Okafor", skill: "React Developer", category: "Technology", state: "Lagos", bio: "5 years building fast, scalable web apps with React and Next.js. Former engineer at a Lagos fintech.", rate: "₦15,000/hr", whatsapp: "08011111111", portfolio: "https://amaradev.com", createdAt: "" },
-  { id: "seed-2", name: "Tunde Adeyemi", skill: "Logo & Brand Designer", category: "Design", state: "Oyo", bio: "I help startups and small businesses build memorable brand identities. 200+ clients served.", rate: "₦80,000/project", whatsapp: "08022222222", portfolio: "", createdAt: "" },
-  { id: "seed-3", name: "Ngozi Eze", skill: "Copywriter & Content Strategist", category: "Writing", state: "Enugu", bio: "SEO-focused content writer for SaaS, fintech, and e-commerce brands. Fast turnaround.", rate: "₦5,000/article", whatsapp: "08033333333", portfolio: "https://ngoziwrites.com", createdAt: "" },
-  { id: "seed-4", name: "Emeka Nwosu", skill: "Electrician & Solar Installer", category: "Trades", state: "Anambra", bio: "Certified electrician with 8 years experience. Residential wiring, solar panels, inverter setup.", rate: "₦10,000/day", whatsapp: "08044444444", portfolio: "", createdAt: "" },
-  { id: "seed-5", name: "Fatima Bello", skill: "Social Media Manager", category: "Marketing", state: "Kano", bio: "I grow brand presence on Instagram, TikTok and Twitter. Managed accounts with 100k+ followers.", rate: "₦50,000/month", whatsapp: "08055555555", portfolio: "", createdAt: "" },
-  { id: "seed-6", name: "Chukwudi Obi", skill: "Wedding & Event Photographer", category: "Photography", state: "Rivers", bio: "Professional photographer covering weddings, corporate events and portraits across the south-south.", rate: "₦120,000/event", whatsapp: "08066666666", portfolio: "https://chuks.photos", createdAt: "" },
-];
+  { id: "seed-1", user_id: "seed-user-1", name: "Amara Okafor", skill: "React Developer", category: "Technology", state: "Lagos", bio: "5 years building fast, scalable web apps with React and Next.js. Former engineer at a Lagos fintech.", rate: "₦15,000/hr", whatsapp: "08011111111", portfolio: "https://amaradev.com", avatar_url: null, is_approved: true, created_at: new Date().toISOString() },
+  { id: "seed-2", user_id: "seed-user-2", name: "Tunde Adeyemi", skill: "Logo & Brand Designer", category: "Design", state: "Oyo", bio: "I help startups and small businesses build memorable brand identities. 200+ clients served.", rate: "₦80,000/project", whatsapp: "08022222222", portfolio: "", avatar_url: null, is_approved: true, created_at: new Date().toISOString() },
+  { id: "seed-3", user_id: "seed-user-3", name: "Ngozi Eze", skill: "Copywriter & Content Strategist", category: "Writing", state: "Enugu", bio: "SEO-focused content writer for SaaS, fintech, and e-commerce brands. Fast turnaround.", rate: "₦5,000/article", whatsapp: "08033333333", portfolio: "https://ngoziwrites.com", avatar_url: null, is_approved: true, created_at: new Date().toISOString() },
+]
 
-function getCategoryColor(category: string) {
-  const map: Record<string, string> = {
-    Technology: "#dbeafe|#1d4ed8",
-    Design: "#fce7f3|#be185d",
-    Writing: "#fef9c3|#a16207",
-    Marketing: "#ffedd5|#c2410c",
-    Trades: "#dcfce7|#15803d",
-    Photography: "#f3e8ff|#7e22ce",
-    Education: "#cffafe|#0e7490",
-    Other: "#f1f5f9|#475569",
+function getCategoryColor(category: string): { bg: string; text: string } {
+  const map: Record<string, { bg: string; text: string }> = {
+    Technology: { bg: "bg-blue-100", text: "text-blue-700" },
+    Design: { bg: "bg-pink-100", text: "text-pink-700" },
+    Writing: { bg: "bg-yellow-100", text: "text-yellow-700" },
+    Marketing: { bg: "bg-orange-100", text: "text-orange-700" },
+    Trades: { bg: "bg-green-100", text: "text-green-700" },
+    Photography: { bg: "bg-purple-100", text: "text-purple-700" },
+    Education: { bg: "bg-cyan-100", text: "text-cyan-700" },
+    Other: { bg: "bg-slate-100", text: "text-slate-600" },
   };
-  const val = map[category] || map["Other"];
-  const [bg, text] = val.split("|");
-  return { bg, text };
+  return map[category] ?? map["Other"];
 }
 
 function getInitials(name: string) {
@@ -56,83 +62,114 @@ function formatWhatsApp(number: string) {
 
 // ── Profile Modal ──
 function ProfileModal({ freelancer, onClose }: { freelancer: Freelancer; onClose: () => void }) {
-  const colors = getCategoryColor(freelancer.category);
+  const { bg, text } = getCategoryColor(freelancer.category);
+
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = ""; };
   }, []);
 
   return (
-    <>
-      <style>{modalStyles}</style>
-      <div className="modal-backdrop" onClick={onClose}>
-        <div className="modal-card" onClick={e => e.stopPropagation()}>
-          <button className="modal-close" onClick={onClose}>✕</button>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/50 backdrop-blur-sm animate-[fadeIn_0.15s_ease]"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl p-9 w-full max-w-lg relative max-h-[90vh] overflow-y-auto animate-[slideUp_0.2s_ease]"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Close */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-500 transition"
+        >
+          <X size={14} />
+        </button>
 
-          <div className="modal-header">
-            <div className="modal-avatar" style={{ background: colors.bg, color: colors.text }}>
-              {getInitials(freelancer.name)}
-            </div>
-            <div>
-              <h2 className="modal-name">{freelancer.name}</h2>
-              <p className="modal-skill">{freelancer.skill}</p>
-              <div className="modal-meta">
-                <span className="modal-badge" style={{ background: colors.bg, color: colors.text }}>
-                  {freelancer.category}
-                </span>
-                <span className="modal-location">📍 {freelancer.state}</span>
-              </div>
+        {/* Header */}
+        <div className="flex gap-4 items-start mb-6">
+          <div className={`w-14 h-14 min-w-[56px] rounded-2xl flex items-center justify-center font-bold text-xl ${bg} ${text}`}>
+            {getInitials(freelancer.name)}
+          </div>
+          <div>
+            <h2 className="font-bold text-xl text-slate-900 mb-0.5">{freelancer.name}</h2>
+            <p className="text-sm font-medium text-green-700 mb-2">{freelancer.skill}</p>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${bg} ${text}`}>
+                {freelancer.category}
+              </span>
+              <span className="text-xs text-slate-400 flex items-center gap-1">
+                <MapPin size={12} className="text-slate-400" /> {freelancer.state}
+              </span>
             </div>
           </div>
-
-          <div className="modal-section">
-            <p className="modal-section-label">About</p>
-            <p className="modal-bio">{freelancer.bio}</p>
-          </div>
-
-          <div className="modal-row">
-            <div className="modal-info-box">
-              <p className="modal-section-label">Rate</p>
-              <p className="modal-info-value">{freelancer.rate}</p>
-            </div>
-            {freelancer.portfolio && (
-              <div className="modal-info-box">
-                <p className="modal-section-label">Portfolio</p>
-                <a href={freelancer.portfolio} target="_blank" rel="noreferrer"
-                  className="modal-portfolio-link">View work →</a>
-              </div>
-            )}
-          </div>
-
-          <a href={formatWhatsApp(freelancer.whatsapp)} target="_blank" rel="noreferrer"
-            className="modal-whatsapp">
-            <span>💬</span> Contact on WhatsApp
-          </a>
         </div>
+
+        {/* Bio */}
+        <div className="mb-5">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">About</p>
+          <p className="text-sm text-gray-700 leading-relaxed">{freelancer.bio}</p>
+        </div>
+
+        {/* Rate + Portfolio */}
+        <div className="flex gap-4 mb-6">
+          <div className="flex-1 bg-slate-50 rounded-xl p-3.5">
+            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Rate</p>
+            <p className="font-semibold text-slate-900 text-[15px]">{freelancer.rate}</p>
+          </div>
+          {freelancer.portfolio && (
+            <div className="flex-1 bg-slate-50 rounded-xl p-3.5">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Portfolio</p>
+              <a
+                href={freelancer.portfolio}
+                target="_blank"
+                rel="noreferrer"
+                className="text-sm font-medium text-green-700 hover:underline flex items-center gap-1"
+              >
+                View work <ExternalLink size={14} />
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* WhatsApp CTA */}
+        <a
+          href={formatWhatsApp(freelancer.whatsapp)}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center justify-center gap-2 w-full py-3.5 bg-green-700 hover:bg-green-800 hover:-translate-y-0.5 text-white font-semibold text-[15px] rounded-xl transition"
+        >
+          <MessageSquare size={18} /> Contact on WhatsApp
+        </a>
       </div>
-    </>
+    </div>
   );
 }
 
 // ── Freelancer Card ──
 function FreelancerCard({ freelancer, onClick }: { freelancer: Freelancer; onClick: () => void }) {
-  const colors = getCategoryColor(freelancer.category);
+  const { bg, text } = getCategoryColor(freelancer.category);
   return (
-    <div className="card" onClick={onClick}>
-      <div className="card-top">
-        <div className="card-avatar" style={{ background: colors.bg, color: colors.text }}>
+    <div
+      onClick={onClick}
+      className="bg-white border border-slate-200 rounded-2xl p-6 cursor-pointer flex flex-col gap-2 transition hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)] hover:border-green-200"
+    >
+      <div className="flex items-center justify-between mb-1">
+        <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-base ${bg} ${text}`}>
           {getInitials(freelancer.name)}
         </div>
-        <span className="card-badge" style={{ background: colors.bg, color: colors.text }}>
+        <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${bg} ${text}`}>
           {freelancer.category}
         </span>
       </div>
-      <h3 className="card-name">{freelancer.name}</h3>
-      <p className="card-skill">{freelancer.skill}</p>
-      <p className="card-bio">{freelancer.bio}</p>
-      <div className="card-footer">
-        <span className="card-rate">{freelancer.rate}</span>
-        <span className="card-location">📍 {freelancer.state}</span>
+      <h3 className="font-bold text-[17px] text-slate-900">{freelancer.name}</h3>
+      <p className="text-[13px] font-medium text-green-700">{freelancer.skill}</p>
+      <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2 flex-1">{freelancer.bio}</p>
+      <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-100">
+        <span className="font-semibold text-sm text-slate-900">{freelancer.rate}</span>
+        <span className="text-xs text-slate-400 flex items-center gap-1">
+          <MapPin size={12} /> {freelancer.state}
+        </span>
       </div>
     </div>
   );
@@ -140,6 +177,7 @@ function FreelancerCard({ freelancer, onClick }: { freelancer: Freelancer; onCli
 
 // ── Main Page ──
 export default function HomePage() {
+  const { user } = useAuth();
   const router = useRouter();
   const [freelancers, setFreelancers] = useState<Freelancer[]>([]);
   const [search, setSearch] = useState("");
@@ -148,10 +186,13 @@ export default function HomePage() {
   const [selected, setSelected] = useState<Freelancer | null>(null);
 
   useEffect(() => {
-    const stored = getFreelancers();
-    const seededIds = new Set(stored.map(f => f.id));
-    const seeds = SEED_FREELANCERS.filter(s => !seededIds.has(s.id));
-    setFreelancers([...stored, ...seeds]);
+    getFreelancers().then(data => {
+      if (data.length === 0) {
+        setFreelancers(SEED_FREELANCERS);
+      } else {
+        setFreelancers(data);
+      }
+    });
   }, []);
 
   const filtered = freelancers.filter(f => {
@@ -162,73 +203,102 @@ export default function HomePage() {
     return matchSearch && matchCat && matchState;
   });
 
-  return (
-    <>
-      <style>{pageStyles}</style>
+  const inputBase = "px-3.5 py-2.5 text-sm text-slate-700 bg-white border border-slate-200 rounded-xl outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/10 transition appearance-none cursor-pointer";
 
+  return (
+    <div className="min-h-screen bg-[#f5f5f0]">
       {/* Navbar */}
-      <nav className="nav">
-        <div className="nav-inner">
-          <div className="nav-brand">
-            <span className="nav-logo">S</span>
-            <span className="nav-logo-text">SkillFind</span>
-            <span className="nav-flag">🇳🇬</span>
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-10">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-8 h-8 bg-green-700 text-white font-extrabold text-base rounded-lg flex items-center justify-center">S</span>
+            <span className="font-bold text-lg text-slate-900 tracking-tight">SkillFind</span>
+            <span className="text-lg">🇳🇬</span>
           </div>
-          <button className="nav-cta" onClick={() => router.push("/register")}>
-            List Your Skills →
-          </button>
+          <div className="flex items-center gap-3">
+            {user ? (
+              <>
+                <button
+                  onClick={() => router.push("/register")}
+                  className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition cursor-pointer flex items-center gap-2"
+                >
+                  List Your Skills <Plus size={16} />
+                </button>
+                <button
+                  onClick={async () => { await signOut(); router.refresh(); }}
+                  className="text-sm text-slate-500 hover:text-slate-700 transition cursor-pointer bg-transparent border-none flex items-center gap-1.5"
+                >
+                  <LogOut size={16} /> Sign Out
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => router.push("/auth")}
+                className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition cursor-pointer flex items-center gap-2"
+              >
+                Sign In <User size={16} />
+              </button>
+            )}
+          </div>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="hero">
-        <p className="hero-eyebrow">Nigeria's Freelancer Directory</p>
-        <h1 className="hero-title">
+      <section className="text-center max-w-2xl mx-auto px-6 pt-16 pb-10">
+        <span className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 text-xs font-medium uppercase tracking-wider px-3 py-1 rounded-full mb-4">
+          <CheckCircle size={12} /> Nigeria's Freelancer Directory
+        </span>
+        <h1 className="text-[44px] sm:text-3xl font-extrabold text-slate-900 leading-tight tracking-tight mb-3">
           Find skilled professionals<br />
-          <span className="hero-accent">across Nigeria</span>
+          <span className="text-green-700">across Nigeria</span>
         </h1>
-        <p className="hero-sub">
+        <p className="text-base text-slate-500">
           Browse verified freelancers by skill, category, and state.
         </p>
       </section>
 
-      {/* Search & Filter */}
-      <div className="filters-wrap">
-        <div className="filters">
-          <div className="search-box">
-            <span className="search-icon">🔍</span>
+      <div className="max-w-6xl mx-auto px-6 pb-4">
+        <div className="flex gap-3 flex-wrap mb-3">
+          <div className="relative flex items-center flex-1 min-w-60">
+            <Search className="absolute left-3 text-slate-400" size={16} />
             <input
-              className="search-input"
+              className="w-full pl-9 pr-9 py-2.5 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-slate-300 transition"
               placeholder="Search by name or skill..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
             {search && (
-              <button className="search-clear" onClick={() => setSearch("")}>✕</button>
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-3 text-slate-400 hover:text-slate-600"
+              >
+                <X size={14} />
+              </button>
             )}
           </div>
-          <select className="filter-select" value={category} onChange={e => setCategory(e.target.value)}>
+          <select className={inputBase} value={category} onChange={e => setCategory(e.target.value)}>
             {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select className="filter-select" value={state} onChange={e => setState(e.target.value)}>
+          <select className={inputBase} value={state} onChange={e => setState(e.target.value)}>
             {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
-        <p className="results-count">
+        <p className="text-[13px] text-slate-400">
           {filtered.length} freelancer{filtered.length !== 1 ? "s" : ""} found
         </p>
       </div>
 
       {/* Grid */}
-      <main className="grid-wrap">
+      <main className="max-w-6xl mx-auto px-6 pb-16">
         {filtered.length === 0 ? (
-          <div className="empty">
-            <div className="empty-icon">🔎</div>
-            <h3>No freelancers found</h3>
-            <p>Try adjusting your search or filters</p>
+          <div className="text-center py-20">
+            <div className="flex justify-center mb-4">
+              <Search size={48} className="text-slate-200" />
+            </div>
+            <h3 className="font-bold text-xl text-slate-900 mb-2">No freelancers found</h3>
+            <p className="text-sm text-slate-400">Try adjusting your search or filters</p>
           </div>
         ) : (
-          <div className="card-grid">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5">
             {filtered.map(f => (
               <FreelancerCard key={f.id} freelancer={f} onClick={() => setSelected(f)} />
             ))}
@@ -237,285 +307,6 @@ export default function HomePage() {
       </main>
 
       {selected && <ProfileModal freelancer={selected} onClose={() => setSelected(null)} />}
-    </>
+    </div>
   );
 }
-
-const pageStyles = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
-
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: #f5f5f0; font-family: 'DM Sans', sans-serif; }
-
-  /* NAV */
-  .nav {
-    background: #fff;
-    border-bottom: 1px solid #e2e8f0;
-    position: sticky; top: 0; z-index: 100;
-  }
-  .nav-inner {
-    max-width: 1200px; margin: 0 auto;
-    padding: 0 24px; height: 64px;
-    display: flex; align-items: center; justify-content: space-between;
-  }
-  .nav-brand { display: flex; align-items: center; gap: 8px; }
-  .nav-logo {
-    width: 32px; height: 32px; background: #16a34a; color: #fff;
-    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px;
-    border-radius: 7px; display: flex; align-items: center; justify-content: center;
-  }
-  .nav-logo-text {
-    font-family: 'Syne', sans-serif; font-weight: 700;
-    font-size: 18px; color: #0f172a;
-  }
-  .nav-flag { font-size: 18px; }
-  .nav-cta {
-    background: #16a34a; color: #fff;
-    font-family: 'Syne', sans-serif; font-weight: 600; font-size: 13px;
-    padding: 9px 18px; border: none; border-radius: 8px; cursor: pointer;
-    transition: background 0.15s, transform 0.1s;
-  }
-  .nav-cta:hover { background: #15803d; transform: translateY(-1px); }
-
-  /* HERO */
-  .hero {
-    text-align: center;
-    padding: 64px 24px 40px;
-    max-width: 700px; margin: 0 auto;
-  }
-  .hero-eyebrow {
-    display: inline-block;
-    background: #dcfce7; color: #15803d;
-    font-size: 12px; font-weight: 500;
-    padding: 4px 12px; border-radius: 99px;
-    letter-spacing: 0.5px; text-transform: uppercase;
-    margin-bottom: 16px;
-  }
-  .hero-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 44px; font-weight: 800;
-    color: #0f172a; line-height: 1.1;
-    letter-spacing: -1px; margin-bottom: 14px;
-  }
-  .hero-accent { color: #16a34a; }
-  .hero-sub { font-size: 16px; color: #64748b; }
-
-  /* FILTERS */
-  .filters-wrap {
-    max-width: 1200px; margin: 0 auto;
-    padding: 0 24px 16px;
-  }
-  .filters {
-    display: flex; gap: 12px; flex-wrap: wrap;
-    margin-bottom: 12px;
-  }
-  .search-box {
-    flex: 1; min-width: 240px;
-    position: relative; display: flex; align-items: center;
-  }
-  .search-icon {
-    position: absolute; left: 12px;
-    font-size: 14px; pointer-events: none;
-  }
-  .search-input {
-    width: 100%; padding: 10px 36px 10px 36px;
-    font-family: 'DM Sans', sans-serif; font-size: 14px;
-    color: #0f172a; background: #fff;
-    border: 1.5px solid #e2e8f0; border-radius: 10px;
-    outline: none; transition: border-color 0.15s;
-  }
-  .search-input:focus { border-color: #22c55e; }
-  .search-input::placeholder { color: #c0c9d8; }
-  .search-clear {
-    position: absolute; right: 10px;
-    background: none; border: none; cursor: pointer;
-    color: #94a3b8; font-size: 12px; padding: 4px;
-  }
-  .filter-select {
-    padding: 10px 14px;
-    font-family: 'DM Sans', sans-serif; font-size: 14px;
-    color: #374151; background: #fff;
-    border: 1.5px solid #e2e8f0; border-radius: 10px;
-    outline: none; cursor: pointer; appearance: none;
-    transition: border-color 0.15s;
-    min-width: 150px;
-  }
-  .filter-select:focus { border-color: #22c55e; }
-  .results-count { font-size: 13px; color: #94a3b8; }
-
-  /* GRID */
-  .grid-wrap {
-    max-width: 1200px; margin: 0 auto;
-    padding: 8px 24px 64px;
-  }
-  .card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-  }
-
-  /* CARD */
-  .card {
-    background: #fff;
-    border: 1.5px solid #e2e8f0;
-    border-radius: 16px;
-    padding: 24px;
-    cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
-    display: flex; flex-direction: column; gap: 8px;
-  }
-  .card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-    border-color: #bbf7d0;
-  }
-  .card-top {
-    display: flex; align-items: center;
-    justify-content: space-between; margin-bottom: 4px;
-  }
-  .card-avatar {
-    width: 44px; height: 44px; border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Syne', sans-serif; font-weight: 700; font-size: 16px;
-  }
-  .card-badge {
-    font-size: 11px; font-weight: 500;
-    padding: 3px 10px; border-radius: 99px;
-    letter-spacing: 0.2px;
-  }
-  .card-name {
-    font-family: 'Syne', sans-serif; font-weight: 700;
-    font-size: 17px; color: #0f172a;
-  }
-  .card-skill {
-    font-size: 13px; font-weight: 500; color: #16a34a;
-  }
-  .card-bio {
-    font-size: 13px; color: #64748b; line-height: 1.5;
-    display: -webkit-box; -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical; overflow: hidden;
-    flex: 1;
-  }
-  .card-footer {
-    display: flex; align-items: center;
-    justify-content: space-between; margin-top: 8px;
-    padding-top: 12px; border-top: 1px solid #f1f5f9;
-  }
-  .card-rate {
-    font-family: 'Syne', sans-serif; font-weight: 600;
-    font-size: 14px; color: #0f172a;
-  }
-  .card-location { font-size: 12px; color: #94a3b8; }
-
-  /* EMPTY */
-  .empty {
-    text-align: center; padding: 80px 24px;
-  }
-  .empty-icon { font-size: 48px; margin-bottom: 16px; }
-  .empty h3 {
-    font-family: 'Syne', sans-serif; font-size: 20px;
-    font-weight: 700; color: #0f172a; margin-bottom: 8px;
-  }
-  .empty p { font-size: 14px; color: #94a3b8; }
-
-  /* MOBILE */
-  @media (max-width: 640px) {
-    .hero-title { font-size: 30px; }
-    .filters { flex-direction: column; }
-    .search-box { min-width: unset; }
-    .filter-select { width: 100%; }
-    .card-grid { grid-template-columns: 1fr; }
-  }
-`;
-
-const modalStyles = `
-  .modal-backdrop {
-    position: fixed; inset: 0; z-index: 200;
-    background: rgba(15,23,42,0.5);
-    backdrop-filter: blur(4px);
-    display: flex; align-items: center; justify-content: center;
-    padding: 24px;
-    animation: fadeIn 0.15s ease;
-  }
-  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
-
-  .modal-card {
-    background: #fff; border-radius: 20px;
-    padding: 36px; width: 100%; max-width: 480px;
-    position: relative;
-    animation: slideUp 0.2s ease;
-    max-height: 90vh; overflow-y: auto;
-  }
-  @keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px) }
-    to { opacity: 1; transform: translateY(0) }
-  }
-
-  .modal-close {
-    position: absolute; top: 16px; right: 16px;
-    background: #f1f5f9; border: none; border-radius: 8px;
-    width: 32px; height: 32px; cursor: pointer;
-    color: #64748b; font-size: 12px;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.1s;
-  }
-  .modal-close:hover { background: #e2e8f0; }
-
-  .modal-header {
-    display: flex; gap: 16px; align-items: flex-start;
-    margin-bottom: 24px;
-  }
-  .modal-avatar {
-    width: 56px; height: 56px; min-width: 56px;
-    border-radius: 14px; font-family: 'Syne', sans-serif;
-    font-weight: 700; font-size: 20px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .modal-name {
-    font-family: 'Syne', sans-serif; font-weight: 700;
-    font-size: 20px; color: #0f172a; margin-bottom: 2px;
-  }
-  .modal-skill { font-size: 14px; color: #16a34a; font-weight: 500; margin-bottom: 8px; }
-  .modal-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .modal-badge {
-    font-size: 11px; font-weight: 500;
-    padding: 3px 10px; border-radius: 99px;
-  }
-  .modal-location { font-size: 12px; color: #94a3b8; }
-
-  .modal-section { margin-bottom: 20px; }
-  .modal-section-label {
-    font-size: 11px; font-weight: 600; color: #94a3b8;
-    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
-  }
-  .modal-bio { font-size: 14px; color: #374151; line-height: 1.6; }
-
-  .modal-row {
-    display: flex; gap: 16px; margin-bottom: 24px;
-  }
-  .modal-info-box {
-    flex: 1; background: #f8fafc;
-    border-radius: 10px; padding: 14px;
-  }
-  .modal-info-value {
-    font-family: 'Syne', sans-serif; font-weight: 600;
-    font-size: 15px; color: #0f172a;
-  }
-  .modal-portfolio-link {
-    font-size: 14px; font-weight: 500;
-    color: #16a34a; text-decoration: none;
-  }
-  .modal-portfolio-link:hover { text-decoration: underline; }
-
-  .modal-whatsapp {
-    display: flex; align-items: center; justify-content: center;
-    gap: 8px; width: 100%; padding: 14px;
-    background: #16a34a; color: #fff;
-    font-family: 'Syne', sans-serif; font-weight: 600; font-size: 15px;
-    border-radius: 12px; text-decoration: none;
-    transition: background 0.15s, transform 0.1s;
-  }
-  .modal-whatsapp:hover {
-    background: #15803d; transform: translateY(-1px);
-  }
-`;
