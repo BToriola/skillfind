@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { saveFreelancer, getUserFreelancerProfile } from "@/utils/storage";
 import { CheckCircle, ArrowRight, User, ArrowLeft } from "lucide-react";
+import AIBioGenerator from "@/components/AIBioGenerator";
+import AIPriceSuggester from "@/components/AIPriceSuggester";
 
 const CATEGORIES = ["Technology", "Design", "Writing", "Marketing", "Trades", "Photography", "Education", "Other"];
 const NIGERIAN_STATES = ["Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"];
@@ -92,7 +94,7 @@ export default function RegisterPage() {
   if (alreadyListed) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl shadow-lg p-12 text-center max-w-sm w-full">
+        <div className="bg-white rounded-2xl p-12 text-center max-w-sm w-full">
           <div className="text-5xl mb-4">👋</div>
           <h2 className="text-xl font-bold text-slate-900 mb-2">You're already listed!</h2>
           <p className="text-sm text-slate-400 mb-6">You already have a profile on SkillFind.</p>
@@ -108,7 +110,7 @@ export default function RegisterPage() {
   if (submitted) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="bg-white rounded-2xl shadow-lg p-12 text-center max-w-sm w-full">
+        <div className="bg-white rounded-2xl p-12 text-center max-w-sm w-full">
           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">✓</div>
           <h2 className="text-xl font-bold text-slate-900 mb-2">Profile Created!</h2>
           <p className="text-sm text-slate-400">Taking you to the directory...</p>
@@ -196,15 +198,38 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">Professional Bio</label>
-              <textarea name="bio" value={form.bio} onChange={handleChange} rows={3} placeholder="Describe your experience and what makes you unique..." className={errors.bio ? inputError : inputClass} />
+              <AIBioGenerator
+                name={form.name}
+                skill={form.skill}
+                state={form.state}
+                onGenerated={(bio) => setForm({ ...form, bio })}
+              />
+              <textarea
+                name="bio"
+                value={form.bio}
+                onChange={handleChange}
+                rows={3}
+                placeholder="Describe your experience and what makes you unique..."
+                className={errors.bio ? inputError : inputClass}
+              />
               {errors.bio && <span className="text-xs text-red-500">{errors.bio}</span>}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700">Rate (₦)</label>
-                <input name="rate" value={form.rate} onChange={handleChange} placeholder="e.g. ₦5,000/hr" className={errors.rate ? inputError : inputClass} />
+                <AIPriceSuggester
+                  skill={form.skill}
+                  category={form.category}
+                  state={form.state}
+                  onApply={(rate) => setForm({ ...form, rate })}
+                />
+                <input
+                  name="rate"
+                  value={form.rate}
+                  onChange={handleChange}
+                  placeholder="e.g. ₦5,000/hr or ₦50,000/project"
+                  className={errors.rate ? inputError : inputClass}
+                />
                 {errors.rate && <span className="text-xs text-red-500">{errors.rate}</span>}
               </div>
               <div className="flex flex-col gap-1.5">

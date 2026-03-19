@@ -48,3 +48,20 @@ export async function deleteFreelancer(id: string) {
     .eq("id", id);
   return { error };
 }
+
+export async function uploadAvatar(userId: string, file: File): Promise<string | null> {
+  const fileExt = file.name.split(".").pop();
+  const filePath = `${userId}/avatar.${fileExt}`;
+
+  // Remove old avatar first
+  await supabase.storage.from("avatars").remove([filePath]);
+
+  const { error } = await supabase.storage
+    .from("avatars")
+    .upload(filePath, file, { upsert: true });
+
+  if (error) { console.error(error); return null; }
+
+  const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+  return data.publicUrl;
+}
