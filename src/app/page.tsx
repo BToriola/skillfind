@@ -86,12 +86,22 @@ export default function HomePage() {
                 </button>
               </>
             ) : (
-              <motion.button onClick={() => router.push("/auth")}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition cursor-pointer flex items-center gap-2">
-                Sign In <User size={16} />
-              </motion.button>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => router.push("/auth?mode=login")}
+                  className="text-sm font-semibold text-slate-600 hover:text-slate-900 bg-transparent border-none cursor-pointer transition"
+                >
+                  Sign In
+                </button>
+                <motion.button
+                  onClick={() => router.push("/auth")}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition cursor-pointer border-none"
+                >
+                  Sign Up Free →
+                </motion.button>
+              </div>
             )}
           </div>
         </div>

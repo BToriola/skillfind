@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { saveFreelancer, getUserFreelancerProfile } from "@/utils/storage";
+import { supabase } from "@/utils/supabase";
 import { CheckCircle, ArrowRight, User, ArrowLeft } from "lucide-react";
 import AIBioGenerator from "@/components/AIBioGenerator";
 import AIPriceSuggester from "@/components/AIPriceSuggester";
@@ -36,10 +37,23 @@ export default function RegisterPage() {
   // Check if user already has a profile
   useEffect(() => {
     if (user) {
+      // Check if already listed
       getUserFreelancerProfile(user.id).then(profile => {
-        if (profile) setAlreadyListed(true);
+        if (profile) { setAlreadyListed(true); setCheckingProfile(false); return; }
         setCheckingProfile(false);
       });
+
+      // Prefill name from profile
+      supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .single()
+        .then(({ data }) => {
+          if (data?.full_name) {
+            setForm(prev => ({ ...prev, name: data.full_name }));
+          }
+        });
     }
   }, [user]);
 

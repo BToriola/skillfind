@@ -8,6 +8,7 @@ import { Freelancer } from "@/types";
 import { getCategoryColor, getInitials, formatWhatsApp, formatRate } from "@/utils/helpers";
 import StarRating from "@/components/StarRating";
 import { motion, AnimatePresence } from "framer-motion";
+import { X, MapPin, ExternalLink, MessageCircle, Star } from "lucide-react";
 
 type Review = {
   id: string;
@@ -130,7 +131,9 @@ export default function ProfileModal({ freelancer, onClose }: ProfileModalProps)
 
         {/* Modal Header */}
         <div className="p-6 sm:p-8 border-b border-slate-100">
-          <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center justify-center text-slate-500 text-xs cursor-pointer transition border-none">✕</button>
+          <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center justify-center text-slate-500 cursor-pointer transition border-none">
+            <X size={18} />
+          </button>
           <div className="flex gap-4 items-start">
             {freelancer.avatar_url ? (
               <Image src={freelancer.avatar_url} alt={freelancer.name} width={56} height={56} className="w-14 h-14 min-w-14 rounded-2xl object-cover" />
@@ -144,8 +147,14 @@ export default function ProfileModal({ freelancer, onClose }: ProfileModalProps)
               <p className="text-sm font-medium text-green-600 mb-2">{freelancer.skill}</p>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${bg} ${text}`}>{freelancer.category}</span>
-                <span className="text-xs text-slate-400">📍 {freelancer.state}</span>
-                {avgRating && <span className="text-xs font-semibold text-yellow-500">★ {avgRating} ({reviews.length})</span>}
+                <span className="text-xs text-slate-400 flex items-center gap-1">
+                  <MapPin size={12} /> {freelancer.state}
+                </span>
+                {avgRating && (
+                  <span className="text-xs font-semibold text-yellow-500 flex items-center gap-1">
+                    <Star size={12} className="fill-current" /> {avgRating} ({reviews.length})
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -167,7 +176,9 @@ export default function ProfileModal({ freelancer, onClose }: ProfileModalProps)
             {freelancer.portfolio && (
               <div className="flex-1 bg-slate-50 rounded-xl p-4">
                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Portfolio</p>
-                <a href={freelancer.portfolio} target="_blank" rel="noreferrer" className="text-sm font-medium text-green-600 hover:underline">View work →</a>
+                <a href={freelancer.portfolio} target="_blank" rel="noreferrer" className="text-sm font-medium text-green-600 hover:underline flex items-center gap-1">
+                  View work <ExternalLink size={14} />
+                </a>
               </div>
             )}
           </div>
@@ -176,8 +187,8 @@ export default function ProfileModal({ freelancer, onClose }: ProfileModalProps)
           <motion.a href={formatWhatsApp(freelancer.whatsapp)} target="_blank" rel="noreferrer"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
-            className="flex items-center justify-center gap-2 w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm rounded-xl transition">
-            💬 Contact on WhatsApp
+            className="flex items-center justify-center gap-2 w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm rounded-xl transition shadow-lg shadow-green-600/10">
+            <MessageCircle size={18} /> Contact on WhatsApp
           </motion.a>
 
           {/* Reviews */}

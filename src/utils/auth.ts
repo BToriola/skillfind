@@ -18,6 +18,16 @@ export async function signIn(email: string, password: string) {
   return { data, error };
 }
 
+export async function resetPassword(email: string) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "");
+  
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${siteUrl}/reset-password`,
+  });
+  return { error };
+}
+
+
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   return { error };
