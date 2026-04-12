@@ -3,6 +3,7 @@
 import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, signUp, resetPassword } from "@/utils/auth";
+import { supabase } from "@/utils/supabase";
 import { Eye, EyeOff } from "lucide-react";
 
 type Mode = "login" | "signup" | "forgot";
@@ -38,13 +39,37 @@ function AuthContent() {
       return;
     }
 
-    const { error } = mode === "login"
-      ? await signIn(email, password)
-      : await signUp(email, password, fullName, businessName);
+    if (mode === "signup") {
+      const { data, error } = await signUp(email, password, fullName, businessName);
+      if (error) { setError(error.message); setLoading(false); return; }
 
-    if (error) { setError(error.message); setLoading(false); return; }
-    router.push(mode === "signup" ? "/register" : "/");
-    router.refresh();
+      // If signup, show email confirmation message instead of redirecting
+      setResetSent(true); // reuse the same "check email" screen
+      setLoading(false);
+      return;
+    }
+
+    if (mode === "login") {
+      const { data, error } = await signIn(email, password);
+      if (error) { setError(error.message); setLoading(false); return; }
+
+      // Check if user has a freelancer profile
+      const { data: profile } = await supabase
+        .from("freelancers")
+        .select("id")
+        .eq("user_id", data.user!.id)
+        .single();
+
+      if (!profile) {
+        // New user — send them to register with a welcome flag
+        router.push("/register?welcome=true");
+      } else {
+        // Existing user — send them home
+        router.push("/");
+      }
+      router.refresh();
+      return;
+    }
   }
 
   function switchMode(newMode: Mode) {
@@ -68,16 +93,26 @@ function AuthContent() {
           <span>🇳🇬</span>
         </div>
 
-        {/* Reset sent confirmation */}
+        {/* Check email screen — used for both signup confirmation and password reset */}
         {resetSent ? (
           <div className="text-center">
             <div className="text-5xl mb-4">📧</div>
-            <h2 className="font-bricolage text-xl font-bold text-slate-900 mb-2">Check your email</h2>
+            <h2 className="font-bricolage text-xl font-bold text-slate-900 mb-2">
+              Check your email
+            </h2>
+            <p className="text-sm text-slate-400 mb-2">
+              {mode === "signup"
+                ? "We sent a confirmation link to"
+                : "We sent a password reset link to"}
+            </p>
+            <p className="text-sm font-semibold text-slate-700 mb-4">{email}</p>
             <p className="text-sm text-slate-400 mb-6">
-              We sent a password reset link to <span className="font-medium text-slate-700">{email}</span>. Check your inbox and click the link to reset your password.
+              {mode === "signup"
+                ? "Click the link in your email to verify your account before signing in."
+                : "Click the link in your email to reset your password."}
             </p>
             <button
-              onClick={() => switchMode("login")}
+              onClick={() => { switchMode("login"); setResetSent(false); }}
               className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm rounded-xl transition cursor-pointer border-none"
             >
               Back to Sign In
@@ -190,21 +225,30 @@ function AuthContent() {
             <div className="text-center text-sm text-slate-400 mt-6 flex flex-col gap-2">
               {mode === "signup" && (
                 <p>Already have an account?{" "}
-                  <button onClick={() => switchMode("login")} className="text-green-600 font-semibold hover:underline cursor-pointer bg-transparent border-none">
+                  <button
+                    onClick={() => switchMode("login")}
+                    className="text-green-600 font-semibold hover:underline cursor-pointer bg-transparent border-none"
+                  >
                     Sign In
                   </button>
                 </p>
               )}
               {mode === "login" && (
                 <p>Don't have an account?{" "}
-                  <button onClick={() => switchMode("signup")} className="text-green-600 font-semibold hover:underline cursor-pointer bg-transparent border-none">
-                    Sign Up
+                  <button
+                    onClick={() => switchMode("signup")}
+                    className="text-green-600 font-semibold hover:underline cursor-pointer bg-transparent border-none"
+                  >
+                    Sign Up Free
                   </button>
                 </p>
               )}
               {mode === "forgot" && (
                 <p>Remember your password?{" "}
-                  <button onClick={() => switchMode("login")} className="text-green-600 font-semibold hover:underline cursor-pointer bg-transparent border-none">
+                  <button
+                    onClick={() => switchMode("login")}
+                    className="text-green-600 font-semibold hover:underline cursor-pointer bg-transparent border-none"
+                  >
                     Sign In
                   </button>
                 </p>

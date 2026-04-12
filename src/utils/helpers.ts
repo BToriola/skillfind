@@ -25,12 +25,15 @@ export function formatWhatsApp(number: string) {
 export function formatRate(rate: string) {
   if (!rate) return rate;
   const trimmed = rate.trim();
-  
-  // Add ₦ if missing, then format numbers with commas
+
+  // Add ₦ if missing
   const withSymbol = trimmed.startsWith("₦") ? trimmed : `₦${trimmed}`;
-  
-  // Format any number sequence with commas
-  return withSymbol.replace(/\d+/g, (num) =>
-    parseInt(num).toLocaleString("en-NG")
-  );
+
+  // Format any plain number sequence that doesn't already have commas
+  // e.g. 1000000 → 1,000,000 but leave 1,000,000 alone
+  return withSymbol.replace(/\d+/g, (num) => {
+    // Only format if the number is long enough to need commas
+    if (num.length <= 3) return num;
+    return parseInt(num).toLocaleString("en-NG");
+  });
 }

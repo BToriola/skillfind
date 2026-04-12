@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
+import { rateLimit } from "@/utils/rateLimit";
 
 export async function POST(req: NextRequest) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || req.headers.get("x-real-ip")
+    || "unknown";
+
+  // Allow max 20 requests per 10 minutes for search (more generous)
+  const limit = rateLimit(ip, {
+    maxRequests: 20,
+    windowMs: 10 * 60 * 1000,
+  });
+
+  if (!limit.allowed) {
+    const resetInMinutes = Math.ceil(limit.resetIn / 1000 / 60);
+    return NextResponse.json(
+      { keyword: "", category: "All", error: `Too many requests. Please wait ${resetInMinutes} minutes.` },
+      { status: 429 }
+    );
+  }
+
   const { query } = await req.json();
 
   try {

@@ -23,6 +23,7 @@ export default function HomePage() {
   const [state, setState] = useState("All States");
   const [selected, setSelected] = useState<Freelancer | null>(null);
   const [hasProfile, setHasProfile] = useState(false);
+  const [showProfileNudge, setShowProfileNudge] = useState(false);
 
   useEffect(() => {
     getFreelancers().then((data) => {
@@ -30,7 +31,10 @@ export default function HomePage() {
       setLoadingFreelancers(false);
     });
     if (user) {
-      getUserFreelancerProfile(user.id).then(p => setHasProfile(!!p));
+      getUserFreelancerProfile(user.id).then(profile => {
+        setHasProfile(!!profile);
+        if (!profile) setShowProfileNudge(true);
+      });
     }
   }, [user]);
 
@@ -106,6 +110,30 @@ export default function HomePage() {
           </div>
         </div>
       </nav>
+
+      {showProfileNudge && !hasProfile && user && (
+        <div className="bg-green-600 text-white px-6 py-3">
+          <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-sm font-medium">
+              👋 You're signed in but not listed yet — create your profile to get discovered by clients!
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.push("/register")}
+                className="bg-white text-green-600 font-semibold text-xs px-4 py-2 rounded-lg hover:bg-green-50 transition cursor-pointer border-none"
+              >
+                Create Profile →
+              </button>
+              <button
+                onClick={() => setShowProfileNudge(false)}
+                className="text-green-200 hover:text-white text-xs bg-transparent border-none cursor-pointer"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <section className="text-center max-w-2xl mx-auto px-6 pt-16 pb-10">

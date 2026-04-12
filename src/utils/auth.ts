@@ -1,7 +1,25 @@
 import { supabase } from "./supabase";
 
-export async function signUp(email: string, password: string, fullName: string, businessName: string) {
-  const { data, error } = await supabase.auth.signUp({ email, password });
+export async function signUp(
+  email: string,
+  password: string,
+  fullName: string,
+  businessName: string
+) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${siteUrl}/auth?mode=login`,
+      data: {
+        full_name: fullName,
+        business_name: businessName,
+      },
+    },
+  });
+
   if (error || !data.user) return { data, error };
 
   // Save extra fields to profiles table

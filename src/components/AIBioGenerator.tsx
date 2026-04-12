@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, Loader2 } from "lucide-react";
 
 type Props = {
   name: string;
@@ -45,7 +46,7 @@ export default function AIBioGenerator({ name, skill, state, onGenerated }: Prop
         setExperience("");
         setStrength("");
       } else {
-        setError("Failed to generate bio. Try again.");
+        setError(data.error || "Failed to generate bio. Try again.");
       }
     } catch {
       setError("Something went wrong. Try again.");
@@ -65,7 +66,7 @@ export default function AIBioGenerator({ name, skill, state, onGenerated }: Prop
           onClick={() => setOpen(!open)}
           className="flex items-center gap-1.5 text-xs font-semibold text-purple-600 hover:text-purple-700 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg transition cursor-pointer border-none"
         >
-          ✨ Write with AI
+          <Sparkles size={14} /> Write with AI
         </motion.button>
       </div>
 
@@ -80,7 +81,7 @@ export default function AIBioGenerator({ name, skill, state, onGenerated }: Prop
           >
             <div className="bg-purple-50 border border-purple-100 rounded-2xl p-4 mb-3 flex flex-col gap-3">
               <div className="flex items-center gap-2">
-                <span className="text-lg">✨</span>
+                <Sparkles className="text-purple-600" size={20} />
                 <div>
                   <p className="text-sm font-semibold text-purple-800">AI Bio Generator</p>
                   <p className="text-xs text-purple-500">Answer 2 quick questions and Claude will write your bio</p>
@@ -124,7 +125,7 @@ export default function AIBioGenerator({ name, skill, state, onGenerated }: Prop
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                       className="inline-block"
                     >
-                      ⟳
+                      <Loader2 size={16} />
                     </motion.span>
                     Generating your bio...
                   </span>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { saveFreelancer, getUserFreelancerProfile } from "@/utils/storage";
 import { supabase } from "@/utils/supabase";
@@ -17,6 +17,8 @@ const inputError = "w-full px-3.5 py-2.5 text-sm text-slate-900 bg-white border 
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isWelcome = searchParams.get("welcome") === "true";
   const { user, loading } = useAuth();
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -177,6 +179,20 @@ export default function RegisterPage() {
             <h2 className="text-2xl font-bold text-slate-900 mb-1">Create your profile</h2>
             <p className="text-sm text-slate-400">Takes less than 2 minutes</p>
           </div>
+
+          {isWelcome && (
+            <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-2 flex gap-3 items-start">
+              <span className="text-2xl">🎉</span>
+              <div>
+                <p className="text-sm font-semibold text-green-800 mb-0.5">
+                  Welcome to SkillFind!
+                </p>
+                <p className="text-sm text-green-700">
+                  Your account is confirmed. Complete your profile below to appear in the directory and start getting discovered by clients across Nigeria.
+                </p>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

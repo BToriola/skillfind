@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Lightbulb, Loader2 } from "lucide-react";
 
 type Props = {
   skill: string;
@@ -35,7 +36,7 @@ export default function AIPriceSuggester({ skill, category, state, onApply }: Pr
       if (data.suggestion) {
         setSuggestion(data.suggestion);
       } else {
-        setError("Failed to get suggestion. Try again.");
+        setError(data.error || "Failed to get suggestion. Try again.");
       }
     } catch {
       setError("Something went wrong. Try again.");
@@ -57,7 +58,7 @@ export default function AIPriceSuggester({ skill, category, state, onApply }: Pr
           onClick={() => { setOpen(!open); setSuggestion(""); }}
           className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition cursor-pointer border-none"
         >
-          💡 Suggest a Rate
+          <Lightbulb size={14} /> Suggest a Rate
         </motion.button>
       </div>
 
@@ -72,7 +73,7 @@ export default function AIPriceSuggester({ skill, category, state, onApply }: Pr
           >
             <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-3 flex flex-col gap-3">
               <div className="flex items-center gap-2">
-                <span className="text-lg">💡</span>
+                <Lightbulb className="text-blue-600" size={20} />
                 <div>
                   <p className="text-sm font-semibold text-blue-800">AI Rate Suggester</p>
                   <p className="text-xs text-blue-500">Get a fair market rate based on your skill and location</p>
@@ -105,15 +106,27 @@ export default function AIPriceSuggester({ skill, category, state, onApply }: Pr
                     exit={{ opacity: 0 }}
                     className="bg-white border border-blue-200 rounded-xl p-4"
                   >
-                    <p className="text-xs font-semibold text-blue-700 mb-2">💡 Suggested Rate</p>
+                    <p className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1"><Lightbulb size={14} /> Suggested Rate</p>
                     <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{suggestion}</p>
                     <motion.button
                       type="button"
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.97 }}
                       onClick={() => {
-                        const firstLine = suggestion.split("\n")[0];
-                        onApply(firstLine);
+                        // Extract just the hourly line and clean it up
+                        const lines = suggestion.split("\n").filter(l => l.trim());
+                        const hourlyLine = lines.find(l => l.toLowerCase().includes("hourly"));
+                        
+                        if (hourlyLine) {
+                          // Remove "Hourly:" prefix, keep just the rate value
+                          const cleaned = hourlyLine
+                            .replace(/hourly:/i, "")
+                            .trim();
+                          onApply(cleaned);
+                        } else {
+                          onApply(lines[0]);
+                        }
+                        
                         setOpen(false);
                         setSuggestion("");
                       }}
@@ -141,7 +154,7 @@ export default function AIPriceSuggester({ skill, category, state, onApply }: Pr
                         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                         className="inline-block"
                       >
-                        ⟳
+                        <Loader2 size={16} />
                       </motion.span>
                       Checking market rates...
                     </span>
