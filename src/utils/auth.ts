@@ -33,6 +33,12 @@ export async function signUp(
 
 export async function signIn(email: string, password: string) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  
+  // Wait a moment for session to be stored in cookies
+  if (!error && data.session) {
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
+  
   return { data, error };
 }
 
