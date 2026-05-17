@@ -9,7 +9,7 @@ import { Freelancer } from "@/types";
 import { CATEGORIES, NIGERIAN_STATES } from "@/constants";
 import FreelancerCard from "@/components/FreelancerCard";
 import ProfileModal from "@/components/ProfileModal";
-import { Search, LogOut, Plus, User, CheckCircle, X } from "lucide-react";
+import { Search, LogOut, Plus, User, CheckCircle, X, Globe, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function HomePage() {
@@ -57,8 +57,8 @@ export default function HomePage() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="w-8 h-8 bg-green-700 text-white font-extrabold text-base rounded-lg flex items-center justify-center">S</span>
-            <span className="font-[family-name:var(--font-bricolage)] font-bold text-lg text-slate-900 tracking-tight">SkillFind</span>
-            <span className="text-lg">🇳🇬</span>
+            <span className="font-bricolage font-bold text-lg text-slate-900 tracking-tight">SkillFind</span>
+            <Globe className="text-green-600" size={20} />
           </div>
           <div className="flex items-center gap-3">
             {user ? (
@@ -136,21 +136,65 @@ export default function HomePage() {
       )}
 
       {/* Hero */}
-      <section className="text-center max-w-2xl mx-auto px-6 pt-16 pb-10">
-        <span className="inline-flex items-center gap-1.5 bg-green-100 text-green-700 text-xs font-medium uppercase tracking-wider px-3 py-1 rounded-full mb-4">
-          <CheckCircle size={12} /> Nigeria&apos;s Freelancer Directory
+      <section className="max-w-2xl mx-auto text-center px-6 pt-8 pb-5">
+        <span className="inline-block bg-green-100 text-green-700 text-xs font-medium px-3 py-1 rounded-full uppercase tracking-wide mb-3">
+          Nigeria's Freelancer Directory — Free to Join
         </span>
-        <h1 className="font-[family-name:var(--font-bricolage)] text-[44px] sm:text-3xl font-extrabold text-slate-900 leading-tight tracking-tight mb-3">
-          Find skilled professionals<br />
-          <span className="text-green-700">across Nigeria</span>
+        <h1 className="font-bricolage text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight tracking-tight mb-3">
+          Find skilled professionals.<br />
+          <span className="text-green-600">Get hired across Nigeria.</span>
         </h1>
-        <p className="text-base text-slate-500">
-          Browse verified freelancers by skill, category, and state.
+        <p className="text-sm text-slate-500 mb-6">
+          SkillFind connects Nigerian freelancers with clients who need their skills —
+          no bidding wars, no commissions, just simple direct contact.
         </p>
+        {!user && (
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <button
+              onClick={() => router.push("/auth")}
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-lg transition cursor-pointer border-none text-xs"
+            >
+              List Your Skills Free →
+            </button>
+            <button
+              onClick={() => {
+                document.getElementById("directory")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="bg-white border border-gray-200 hover:border-green-300 text-slate-700 font-semibold px-5 py-2.5 rounded-lg transition cursor-pointer text-xs"
+            >
+              Browse Freelancers ↓
+            </button>
+          </div>
+        )}
       </section>
 
+      {/* Stats bar */}
+      <div className="max-w-2xl mx-auto px-6 pb-6">
+        <div className="bg-white border border-gray-200 rounded-xl px-6 py-3 flex items-center justify-center gap-6 flex-wrap">
+          <div className="text-center">
+            <p className="font-bricolage text-lg font-bold text-slate-900">{freelancers.length}+</p>
+            <p className="text-xs text-slate-400 mt-0.5">Freelancers</p>
+          </div>
+          <div className="w-px h-6 bg-gray-200" />
+          <div className="text-center">
+            <p className="font-bricolage text-lg font-bold text-slate-900">36</p>
+            <p className="text-xs text-slate-400 mt-0.5">States</p>
+          </div>
+          <div className="w-px h-6 bg-gray-200" />
+          <div className="text-center">
+            <p className="font-bricolage text-lg font-bold text-slate-900">Free</p>
+            <p className="text-xs text-slate-400 mt-0.5">No Commissions</p>
+          </div>
+          <div className="w-px h-6 bg-gray-200" />
+          <div className="text-center">
+            <MessageCircle className="text-slate-900 mx-auto" size={20} />
+            <p className="text-xs text-slate-400 mt-0.5">Direct Chat</p>
+          </div>
+        </div>
+      </div>
+
       {/* Filters */}
-      <div className="max-w-6xl mx-auto px-6 pb-4">
+      <div id="directory" className="max-w-6xl mx-auto px-6 pb-3">
         <div className="flex gap-3 flex-wrap mb-3">
           <div className="relative flex items-center flex-1 min-w-60">
             <Search className="absolute left-3 text-slate-400" size={16} />

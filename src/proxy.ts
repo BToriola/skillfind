@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const res = NextResponse.next();
 
   const supabase = createServerClient(
@@ -23,34 +23,31 @@ export async function middleware(req: NextRequest) {
     }
   );
 
-  // Get session
-  const { data: { session } } = await supabase.auth.getSession();
+  // Use getUser() instead of getSession() — more reliable on server side
+  const { data: { user } } = await supabase.auth.getUser();
 
   const { pathname } = req.nextUrl;
 
   // Protect /admin route
   if (pathname.startsWith("/admin")) {
-    // Not logged in at all
-    if (!session) {
+    if (!user) {
       return NextResponse.redirect(new URL("/auth?mode=login", req.url));
     }
 
-    // Logged in but check if admin
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
-      .eq("id", session.user.id)
+      .eq("id", user.id)
       .single();
 
-    // Not an admin
     if (!profile || profile.role !== "admin") {
       return NextResponse.redirect(new URL("/", req.url));
     }
   }
 
-  // Protect /profile and /register routes — must be logged in
+  // Protect /profile and /register
   if (pathname.startsWith("/profile") || pathname.startsWith("/register")) {
-    if (!session) {
+    if (!user) {
       return NextResponse.redirect(new URL("/auth?mode=login", req.url));
     }
   }
