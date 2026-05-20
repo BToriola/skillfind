@@ -98,13 +98,13 @@ function AuthContent() {
             <h2 className="font-bricolage text-xl font-bold text-slate-900 mb-2">
               Check your email
             </h2>
-            <p className="text-sm text-slate-400 mb-2">
+            <p className="text-sm text-slate-500 mb-2">
               {mode === "signup"
                 ? "We sent a confirmation link to"
                 : "We sent a password reset link to"}
             </p>
             <p className="text-sm font-semibold text-slate-700 mb-4">{email}</p>
-            <p className="text-sm text-slate-400 mb-6">
+            <p className="text-sm text-slate-500 mb-6">
               {mode === "signup"
                 ? "Click the link in your email to verify your account before signing in."
                 : "Click the link in your email to reset your password."}
@@ -121,7 +121,7 @@ function AuthContent() {
             <h1 className="font-bricolage text-2xl font-bold text-slate-900 mb-1">
               {mode === "signup" ? "Create your account" : mode === "login" ? "Welcome back" : "Reset your password"}
             </h1>
-            <p className="text-sm text-slate-400 mb-8">
+            <p className="text-sm text-slate-500 mb-8">
               {mode === "signup" ? "Join thousands of Nigerian freelancers" :
                mode === "login" ? "Sign in to manage your profile" :
                "Enter your email and we'll send you a reset link"}
@@ -151,7 +151,7 @@ function AuthContent() {
                       placeholder="e.g. Adenrele Studios"
                       className={inputClass}
                     />
-                    <p className="text-xs text-slate-400">Leave blank if you're an individual freelancer</p>
+                    <p className="text-xs text-slate-500">Leave blank if you&apos;re an individual freelancer</p>
                   </div>
                 </>
               )}
@@ -194,7 +194,7 @@ function AuthContent() {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition bg-transparent border-none cursor-pointer"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 transition bg-transparent border-none cursor-pointer"
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
@@ -216,7 +216,7 @@ function AuthContent() {
             </form>
 
             {/* Mode switcher */}
-            <div className="text-center text-sm text-slate-400 mt-6 flex flex-col gap-2">
+            <div className="text-center text-sm text-slate-500 mt-6 flex flex-col gap-2">
               {mode === "signup" && (
                 <p>Already have an account?{" "}
                   <button
@@ -228,7 +228,7 @@ function AuthContent() {
                 </p>
               )}
               {mode === "login" && (
-                <p>Don't have an account?{" "}
+                <p>Don&apos;t have an account?{" "}
                   <button
                     onClick={() => switchMode("signup")}
                     className="text-green-600 font-semibold hover:underline cursor-pointer bg-transparent border-none"

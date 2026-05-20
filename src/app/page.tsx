@@ -115,7 +115,7 @@ export default function HomePage() {
         <div className="bg-green-600 text-white px-6 py-3">
           <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap">
             <p className="text-sm font-medium">
-              👋 You're signed in but not listed yet — create your profile to get discovered by clients!
+              👋 You&apos;re signed in but not listed yet — create your profile to get discovered by clients!
             </p>
             <div className="flex items-center gap-3">
               <button
@@ -138,7 +138,7 @@ export default function HomePage() {
       {/* Hero */}
       <section className="max-w-2xl mx-auto text-center px-6 pt-8 pb-5">
         <span className="inline-block bg-green-100 text-green-700 text-xs font-medium px-3 py-1 rounded-full uppercase tracking-wide mb-3">
-          Nigeria's Freelancer Directory — Free to Join
+          Nigeria&apos;s Freelancer Directory — Free to Join
         </span>
         <h1 className="font-bricolage text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight tracking-tight mb-3">
           Find skilled professionals.<br />
@@ -173,22 +173,22 @@ export default function HomePage() {
         <div className="bg-white border border-gray-200 rounded-xl px-6 py-3 flex items-center justify-center gap-6 flex-wrap">
           <div className="text-center">
             <p className="font-bricolage text-lg font-bold text-slate-900">{freelancers.length}+</p>
-            <p className="text-xs text-slate-400 mt-0.5">Freelancers</p>
+            <p className="text-xs text-slate-500 mt-0.5">Freelancers</p>
           </div>
           <div className="w-px h-6 bg-gray-200" />
           <div className="text-center">
             <p className="font-bricolage text-lg font-bold text-slate-900">36</p>
-            <p className="text-xs text-slate-400 mt-0.5">States</p>
+            <p className="text-xs text-slate-500 mt-0.5">States</p>
           </div>
           <div className="w-px h-6 bg-gray-200" />
           <div className="text-center">
             <p className="font-bricolage text-lg font-bold text-slate-900">Free</p>
-            <p className="text-xs text-slate-400 mt-0.5">No Commissions</p>
+            <p className="text-xs text-slate-500 mt-0.5">No Commissions</p>
           </div>
           <div className="w-px h-6 bg-gray-200" />
           <div className="text-center">
             <MessageCircle className="text-slate-900 mx-auto" size={20} />
-            <p className="text-xs text-slate-400 mt-0.5">Direct Chat</p>
+            <p className="text-xs text-slate-500 mt-0.5">Direct Chat</p>
           </div>
         </div>
       </div>
@@ -197,7 +197,7 @@ export default function HomePage() {
       <div id="directory" className="max-w-6xl mx-auto px-6 pb-3">
         <div className="flex gap-3 flex-wrap mb-3">
           <div className="relative flex items-center flex-1 min-w-60">
-            <Search className="absolute left-3 text-slate-400" size={16} />
+            <Search className="absolute left-3 text-slate-500" size={16} />
             <input
               className="w-full pl-9 pr-9 py-3.5 text-sm text-slate-900 bg-white border border-slate-200 rounded-full outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-slate-300 transition"
               placeholder="Search by name or skill..."
@@ -205,7 +205,7 @@ export default function HomePage() {
               onChange={e => setSearch(e.target.value)}
             />
             {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 text-slate-400 hover:text-slate-600">
+              <button onClick={() => setSearch("")} className="absolute right-3 text-slate-500 hover:text-slate-600">
                 <X size={14} />
               </button>
             )}
@@ -218,7 +218,7 @@ export default function HomePage() {
           </select>
         </div>
         {(search || category !== "All Categories" || state !== "All States") && (
-          <p className="text-[13px] text-slate-400">
+          <p className="text-[13px] text-slate-500">
             {filtered.length} freelancer{filtered.length !== 1 ? "s" : ""} found
           </p>
         )}
@@ -252,7 +252,7 @@ export default function HomePage() {
               <Search size={48} className="text-slate-200" />
             </div>
             <h3 className="font-bold text-xl text-slate-900 mb-2">No freelancers found</h3>
-            <p className="text-sm text-slate-400">Try adjusting your search or filters</p>
+            <p className="text-sm text-slate-500">Try adjusting your search or filters</p>
           </div>
         ) : (
           <motion.div

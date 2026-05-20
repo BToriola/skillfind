@@ -9,6 +9,7 @@ import { Freelancer } from "@/types";
 import Image from "next/image";
 import AIBioGenerator from "@/components/AIBioGenerator";
 import AIPriceSuggester from "@/components/AIPriceSuggester";
+import PortfolioSection from "@/components/PortfolioSection";
 import { AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -151,7 +152,7 @@ export default function ProfilePage() {
   if (loading || loadingProfile) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-slate-400 text-sm">Loading your profile...</p>
+        <p className="text-slate-500 text-sm">Loading your profile...</p>
       </div>
     );
   }
@@ -179,7 +180,7 @@ export default function ProfilePage() {
         <div className="mb-8 flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-900 mb-1">Edit Your Profile</h1>
-            <p className="text-sm text-slate-400">Changes are saved to your public listing instantly</p>
+            <p className="text-sm text-slate-500">Changes are saved to your public listing instantly</p>
           </div>
           <button onClick={() => setShowDeleteConfirm(true)}
             className="text-sm text-red-500 hover:text-red-700 font-medium bg-transparent border-none cursor-pointer">
@@ -216,7 +217,7 @@ export default function ProfilePage() {
           {/* Upload Controls */}
           <div>
             <p className="text-sm font-semibold text-slate-900 mb-1">Profile Photo</p>
-            <p className="text-xs text-slate-400 mb-3">JPG, PNG or WebP · Max 2MB · Square works best</p>
+            <p className="text-xs text-slate-500 mb-3">JPG, PNG or WebP · Max 2MB · Square works best</p>
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -338,7 +339,7 @@ export default function ProfilePage() {
               placeholder="YouTube or Loom URL e.g. https://youtu.be/xxxxx"
               className={inputClass}
             />
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500">
               A short intro video builds 3x more trust with clients
             </p>
           </div>
@@ -354,6 +355,16 @@ export default function ProfilePage() {
             </button>
           </div>
         </form>
+
+        {/* Portfolio Section */}
+        {freelancer && (
+          <div className="mt-6">
+            <PortfolioSection
+              freelancerId={freelancer.id}
+              canEdit={true}
+            />
+          </div>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}
@@ -362,7 +373,7 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-xl flex flex-col items-center">
             <AlertTriangle className="text-red-500 mb-4" size={40} />
             <h2 className="text-xl font-bold text-slate-900 mb-2">Delete your profile?</h2>
-            <p className="text-sm text-slate-400 mb-6">
+            <p className="text-sm text-slate-500 mb-6">
               This will permanently remove your listing. Clients will no longer be able to find you. This cannot be undone.
             </p>
             <div className="flex gap-3">

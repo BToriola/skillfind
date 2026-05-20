@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { User } from "@supabase/supabase-js";
+import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/utils/supabase";
 
 type AuthContextType = {
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 /**
  * Sync Supabase session to a cookie that the server proxy can read
  */
-function syncSessionToCookie(session: any) {
+function syncSessionToCookie(session: Session) {
   try {
     if (!session) return;
     

@@ -59,8 +59,8 @@ export default function FreelancerCard({ freelancer, onClick }: FreelancerCardPr
       <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2 mt-1">{freelancer.bio}</p>
       <div className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
         <span className="font-semibold text-sm text-slate-900">{formatRate(freelancer.rate)}</span>
-        <span className="text-xs text-slate-400 flex items-center gap-1">
-          <MapPin size={12} /> {freelancer.state}
+        <span className="text-xs text-slate-500 flex items-center gap-1">
+          <MapPin size={12} className="text-red-500" /> {freelancer.state}
         </span>
       </div>
     </motion.div>

@@ -99,7 +99,7 @@ function RegisterContent() {
   if (loading || checkingProfile) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-slate-400 text-sm">Loading...</p>
+        <p className="text-slate-500 text-sm">Loading...</p>
       </div>
     );
   }
@@ -111,8 +111,8 @@ function RegisterContent() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="bg-white rounded-2xl p-12 text-center max-w-sm w-full">
           <div className="text-5xl mb-4">👋</div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">You're already listed!</h2>
-          <p className="text-sm text-slate-400 mb-6">You already have a profile on SkillFind.</p>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">You&apos;re already listed!</h2>
+          <p className="text-sm text-slate-500 mb-6">You already have a profile on SkillFind.</p>
           <button onClick={() => router.push("/")}
             className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm rounded-xl transition cursor-pointer flex items-center justify-center gap-2">
             View Directory <ArrowRight size={16} />
@@ -128,7 +128,7 @@ function RegisterContent() {
         <div className="bg-white rounded-2xl p-12 text-center max-w-sm w-full">
           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">✓</div>
           <h2 className="text-xl font-bold text-slate-900 mb-2">Profile Created!</h2>
-          <p className="text-sm text-slate-400">Taking you to the directory...</p>
+          <p className="text-sm text-slate-500">Taking you to the directory...</p>
         </div>
       </div>
     );
@@ -146,7 +146,7 @@ function RegisterContent() {
         <div>
           <h1 className="text-4xl font-extrabold text-white leading-tight mb-4">
             Your skills.<br />
-            <span className="text-green-400">Nigeria's stage.</span>
+            <span className="text-green-400">Nigeria&apos;s stage.</span>
           </h1>
           <p className="text-green-200/60 text-sm leading-relaxed">
             Join thousands of professionals getting discovered by clients across Nigeria every day.
@@ -176,7 +176,7 @@ function RegisterContent() {
         <div className="w-full max-w-xl">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-slate-900 mb-1">Create your profile</h2>
-            <p className="text-sm text-slate-400">Takes less than 2 minutes</p>
+            <p className="text-sm text-slate-500">Takes less than 2 minutes</p>
           </div>
 
           {isWelcome && (
@@ -282,7 +282,7 @@ function RegisterContent() {
               {saving ? "Saving..." : <span className="flex items-center gap-2">Create Profile & Join SkillFind <ArrowRight size={18} /></span>}
             </button>
 
-            <p className="text-center text-xs text-slate-400">
+            <p className="text-center text-xs text-slate-500">
               By joining, you agree to our Terms of Service and Privacy Policy.
             </p>
           </form>
@@ -296,7 +296,7 @@ export default function RegisterPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-slate-400 text-sm">Loading...</p>
+        <p className="text-slate-500 text-sm">Loading...</p>
       </div>
     }>
       <RegisterContent />

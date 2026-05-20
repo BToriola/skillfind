@@ -12,7 +12,7 @@ export default function FreelancerNotFound() {
         <h1 className="font-bricolage text-2xl font-bold text-slate-900 mb-2">
           Freelancer Not Found
         </h1>
-        <p className="text-slate-400 text-sm mb-6">
+        <p className="text-slate-500 text-sm mb-6">
           This profile may have been removed or the link is incorrect.
         </p>
         <button

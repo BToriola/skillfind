@@ -9,7 +9,10 @@ export function useAdmin() {
 
   useEffect(() => {
     if (!loading) {
-      if (!user) { setCheckingAdmin(false); return; }
+      if (!user) {
+        Promise.resolve().then(() => setCheckingAdmin(false));
+        return;
+      }
       supabase
         .from("profiles")
         .select("role")

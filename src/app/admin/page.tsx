@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/utils/supabase";
@@ -50,15 +50,8 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    if (!checkingAdmin) {
-      if (!isAdmin) { router.push("/"); return; }
-      fetchAll();
-    }
-  }, [isAdmin, checkingAdmin]);
-
-  async function fetchAll() {
-    setLoading(true);
+  const fetchAll = useCallback(async () => {
+    Promise.resolve().then(() => setLoading(true));
     const [
       { data: freelancerData },
       { data: userData },
@@ -94,7 +87,15 @@ export default function AdminPage() {
     });
 
     setLoading(false);
-  }
+  }, []);
+
+  useEffect(() => {
+    if (!checkingAdmin) {
+      if (!isAdmin) { router.push("/"); return; }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchAll();
+    }
+  }, [isAdmin, checkingAdmin, fetchAll, router]);
 
   async function toggleApproval(freelancer: Freelancer) {
     await supabase
@@ -141,7 +142,7 @@ export default function AdminPage() {
   if (checkingAdmin || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-slate-400 text-sm">Loading admin dashboard...</p>
+        <p className="text-slate-500 text-sm">Loading admin dashboard...</p>
       </div>
     );
   }
@@ -179,7 +180,7 @@ export default function AdminPage() {
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="font-bricolage text-2xl font-bold text-slate-900 mb-1">Admin Dashboard</h1>
-          <p className="text-sm text-slate-400">Manage all freelancers, users, and reviews on SkillFind</p>
+          <p className="text-sm text-slate-500">Manage all freelancers, users, and reviews on SkillFind</p>
         </div>
 
         {/* Tabs */}
@@ -248,7 +249,7 @@ export default function AdminPage() {
                     .slice(0, 6)
                     .map(([state, count]) => (
                       <div key={state} className="flex items-center gap-3">
-                        <span className="text-sm text-slate-600 w-28 flex items-center gap-1.5"><MapPinned size={14} className="text-slate-400" /> {state}</span>
+                        <span className="text-sm text-slate-600 w-28 flex items-center gap-1.5"><MapPinned size={14} className="text-slate-500" /> {state}</span>
                         <div className="flex-1 bg-slate-100 rounded-full h-2">
                           <div
                             className="bg-blue-500 h-2 rounded-full transition-all"
@@ -298,13 +299,13 @@ export default function AdminPage() {
                           )}
                           <div>
                             <p className="font-semibold text-slate-900">{f.name}</p>
-                            <p className="text-xs text-slate-400">{f.skill}</p>
+                            <p className="text-xs text-slate-500">{f.skill}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-slate-600 hidden md:table-cell">{f.category}</td>
-                      <td className="px-6 py-4 text-slate-600 hidden lg:table-cell"><div className="flex items-center gap-1.5"><MapPinned size={14} className="text-slate-400" /> {f.state}</div></td>
-                      <td className="px-6 py-4 text-slate-400 text-xs hidden lg:table-cell">
+                      <td className="px-6 py-4 text-slate-600 hidden lg:table-cell"><div className="flex items-center gap-1.5"><MapPinned size={14} className="text-slate-500" /> {f.state}</div></td>
+                      <td className="px-6 py-4 text-slate-500 text-xs hidden lg:table-cell">
                         {new Date(f.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
                       </td>
                       <td className="px-6 py-4">
@@ -339,7 +340,7 @@ export default function AdminPage() {
                 </tbody>
               </table>
               {filteredFreelancers.length === 0 && (
-                <div className="text-center py-12 text-slate-400 text-sm">No freelancers found</div>
+                <div className="text-center py-12 text-slate-500 text-sm">No freelancers found</div>
               )}
             </div>
           </div>
@@ -374,7 +375,7 @@ export default function AdminPage() {
                           </div>
                           <div>
                             <p className="font-semibold text-slate-900">{u.full_name || "—"}</p>
-                            <p className="text-xs text-slate-400">{u.email}</p>
+                            <p className="text-xs text-slate-500">{u.email}</p>
                           </div>
                         </div>
                       </td>
@@ -386,7 +387,7 @@ export default function AdminPage() {
                           {u.role}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-slate-400 text-xs hidden lg:table-cell">
+                      <td className="px-6 py-4 text-slate-500 text-xs hidden lg:table-cell">
                         {new Date(u.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -404,7 +405,7 @@ export default function AdminPage() {
                 </tbody>
               </table>
               {filteredUsers.length === 0 && (
-                <div className="text-center py-12 text-slate-400 text-sm">No users found</div>
+                <div className="text-center py-12 text-slate-500 text-sm">No users found</div>
               )}
             </div>
           </div>
@@ -427,13 +428,13 @@ export default function AdminPage() {
                         <span key={star} className={`text-sm ${star <= review.rating ? "text-yellow-400" : "text-gray-200"}`}>★</span>
                       ))}
                     </div>
-                    <span className="text-xs text-slate-400">
+                    <span className="text-xs text-slate-500">
                       {new Date(review.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}
                     </span>
                   </div>
                   <p className="text-sm text-slate-600 leading-relaxed">{review.comment}</p>
                   <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                    <p className="text-xs text-slate-400">By {review.profiles?.email?.split("@")[0]}</p>
+                    <p className="text-xs text-slate-500">By {review.profiles?.email?.split("@")[0]}</p>
                     <button
                       onClick={() => deleteReview(review.id)}
                       className="text-xs font-medium px-3 py-1.5 rounded-lg bg-red-100 text-red-600 hover:bg-red-200 border-none cursor-pointer transition"
@@ -445,7 +446,7 @@ export default function AdminPage() {
               ))}
             </div>
             {filteredReviews.length === 0 && (
-              <div className="text-center py-12 text-slate-400 text-sm">No reviews found</div>
+              <div className="text-center py-12 text-slate-500 text-sm">No reviews found</div>
             )}
           </div>
         )}

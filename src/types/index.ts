@@ -15,3 +15,14 @@ export type Freelancer = {
   is_approved: boolean;
   created_at: string;
 };
+
+export type PortfolioItem = {
+  id: string;
+  freelancer_id: string;
+  title: string;
+  description: string;
+  image_url: string | null;
+  project_url: string | null;
+  tools_used: string | null;
+  created_at: string;
+};

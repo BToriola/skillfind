@@ -66,7 +66,7 @@ export default function ResetPasswordPage() {
           <div className="text-center">
             <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">✓</div>
             <h2 className="font-bricolage text-xl font-bold text-slate-900 mb-2">Password Updated!</h2>
-            <p className="text-sm text-slate-400">Taking you to the homepage...</p>
+            <p className="text-sm text-slate-500">Taking you to the homepage...</p>
           </div>
 
         /* Waiting for session from email link */
@@ -74,7 +74,7 @@ export default function ResetPasswordPage() {
           <div className="text-center">
             <div className="text-4xl mb-4 animate-pulse">🔐</div>
             <h2 className="font-bricolage text-xl font-bold text-slate-900 mb-2">Verifying your link...</h2>
-            <p className="text-sm text-slate-400 mb-6">
+            <p className="text-sm text-slate-500 mb-6">
               Please wait while we verify your reset link. This only takes a second.
             </p>
             <p className="text-xs text-slate-300">
@@ -94,7 +94,7 @@ export default function ResetPasswordPage() {
             <h1 className="font-bricolage text-2xl font-bold text-slate-900 mb-1">
               Set new password
             </h1>
-            <p className="text-sm text-slate-400 mb-8">
+            <p className="text-sm text-slate-500 mb-8">
               Choose a strong password for your SkillFind account
             </p>
 
@@ -111,7 +111,7 @@ export default function ResetPasswordPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition bg-transparent border-none cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 transition bg-transparent border-none cursor-pointer"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -130,7 +130,7 @@ export default function ResetPasswordPage() {
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition bg-transparent border-none cursor-pointer"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-600 transition bg-transparent border-none cursor-pointer"
                   >
                     {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>

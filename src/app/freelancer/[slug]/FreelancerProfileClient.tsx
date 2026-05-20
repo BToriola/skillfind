@@ -1,13 +1,24 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { Star, MessageCircle, ExternalLink, Play, Pencil, Check, Share2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Star,
+  MessageCircle,
+  ExternalLink,
+  Play,
+  Pencil,
+  Check,
+  Share2,
+  MapPin,
+  Zap,
+} from "lucide-react";
 import { Freelancer } from "@/types";
 import { supabase } from "@/utils/supabase";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
+import PortfolioSection from "@/components/PortfolioSection";
 
 type Review = {
   id: string;
@@ -50,10 +61,12 @@ function StarRating({
   rating,
   onRate,
   readonly = true,
+  size = 16,
 }: {
   rating: number;
   onRate?: (r: number) => void;
   readonly?: boolean;
+  size?: number;
 }) {
   const [hovered, setHovered] = useState(0);
   return (
@@ -66,12 +79,11 @@ function StarRating({
           onClick={() => onRate?.(star)}
           onMouseEnter={() => !readonly && setHovered(star)}
           onMouseLeave={() => !readonly && setHovered(0)}
-          className={`transition border-none bg-transparent ${
-            readonly ? "cursor-default" : "cursor-pointer"
-          }`}
+          className={`transition border-none bg-transparent ${readonly ? "cursor-default" : "cursor-pointer"
+            }`}
         >
           <Star
-            size={18}
+            size={size}
             className={
               star <= (hovered || rating)
                 ? "text-yellow-400 fill-yellow-400"
@@ -86,20 +98,40 @@ function StarRating({
 
 function BioText({ bio }: { bio: string }) {
   const [expanded, setExpanded] = useState(false);
-  const isLong = bio.length > 200;
+  const isLong = bio.length > 220;
   return (
     <div>
-      <p className="text-sm text-slate-600 leading-relaxed">
-        {isLong && !expanded ? bio.slice(0, 200) + "..." : bio}
+      <p className="text-sm text-slate-600 leading-[1.85]">
+        {isLong && !expanded ? bio.slice(0, 220) + "…" : bio}
       </p>
       {isLong && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="text-xs text-green-600 font-medium mt-1 bg-transparent border-none cursor-pointer hover:underline"
+          className="text-xs text-green-600 font-semibold mt-2 bg-transparent border-none cursor-pointer hover:underline"
         >
           {expanded ? "Show less" : "Read more"}
         </button>
       )}
+    </div>
+  );
+}
+
+function SkillChips({ skill }: { skill: string }) {
+  const chips = skill
+    .split(/[,/]/)
+    .map(s => s.trim())
+    .filter(Boolean);
+  if (chips.length <= 1 && chips[0] === skill.trim()) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-3">
+      {chips.map(chip => (
+        <span
+          key={chip}
+          className="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium"
+        >
+          {chip}
+        </span>
+      ))}
     </div>
   );
 }
@@ -120,23 +152,16 @@ export default function FreelancerProfileClient({
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const badgeColor =
-    CATEGORY_COLORS[freelancer.category] || CATEGORY_COLORS.Other;
+  const badgeColor = CATEGORY_COLORS[freelancer.category] || CATEGORY_COLORS.Other;
   const isOwnProfile = user?.id === freelancer.user_id;
   const canReview = user && !isOwnProfile && !userReview;
 
   const avgRating = reviews.length
-    ? (
-        reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-      ).toFixed(1)
+    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
     : null;
 
-  useEffect(() => {
-    fetchReviews();
-  }, [freelancer.id]);
-
-  async function fetchReviews() {
-    setLoadingReviews(true);
+  const fetchReviews = useCallback(async () => {
+    Promise.resolve().then(() => setLoadingReviews(true));
     const { data } = await supabase
       .from("reviews")
       .select("*, profiles(email)")
@@ -149,7 +174,12 @@ export default function FreelancerProfileClient({
       setUserReview(all.find(r => r.reviewer_id === user.id) || null);
     }
     setLoadingReviews(false);
-  }
+  }, [freelancer.id, user]);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchReviews();
+  }, [fetchReviews]);
 
   async function handleSubmitReview(e: React.FormEvent) {
     e.preventDefault();
@@ -158,7 +188,6 @@ export default function FreelancerProfileClient({
     if (!comment.trim()) { toast.error("Please write a short review"); return; }
 
     setSubmitting(true);
-
     const { error } = await supabase.from("reviews").insert([{
       freelancer_id: freelancer.id,
       reviewer_id: user.id,
@@ -196,7 +225,7 @@ export default function FreelancerProfileClient({
 
       {/* Navbar */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <button
             onClick={() => router.push("/")}
             className="flex items-center gap-2 cursor-pointer bg-transparent border-none"
@@ -204,22 +233,22 @@ export default function FreelancerProfileClient({
             <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
               S
             </div>
-            <span className="font-bricolage font-bold text-lg text-slate-900">
-              SkillFind
-            </span>
+            <span className="font-bricolage font-bold text-lg text-slate-900">SkillFind</span>
             <span className="text-lg">🇳🇬</span>
           </button>
           <div className="flex items-center gap-2">
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={handleCopyLink}
-              className="text-sm font-medium text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg transition cursor-pointer border-none"
+              className="text-sm font-medium text-slate-500 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg transition cursor-pointer border-none flex items-center gap-1.5"
             >
-              {copied ? <><Check size={14} className="inline -mt-0.5" /> Copied!</> : <><Share2 size={14} className="inline -mt-0.5" /> Share</>}
+              {copied
+                ? <><Check size={14} /> Copied!</>
+                : <><Share2 size={14} /> Share</>}
             </motion.button>
             <button
               onClick={() => router.push("/")}
-              className="text-sm text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer hidden sm:block"
+              className="text-sm text-slate-500 hover:text-slate-600 bg-transparent border-none cursor-pointer hidden sm:block"
             >
               ← Back
             </button>
@@ -227,64 +256,88 @@ export default function FreelancerProfileClient({
         </div>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 lg:py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6 lg:gap-8 items-start">
 
-          {/* ── LEFT COLUMN ── */}
-          <div className="lg:col-span-1 flex flex-col gap-4">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl border border-gray-200 p-6 flex flex-col items-center text-center gap-4"
-            >
+          {/* ── LEFT COLUMN — Profile Card ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="lg:sticky lg:top-24 flex flex-col gap-4"
+          >
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6 flex flex-col items-center text-center gap-3 sm:gap-4 shadow-sm">
+
               {/* Avatar */}
-              {freelancer.avatar_url ? (
-                <img
-                  src={freelancer.avatar_url}
-                  alt={freelancer.name}
-                  className="w-24 h-24 rounded-2xl object-cover"
-                  loading="lazy"
-                />
-              ) : (
-                <div
-                  className={`w-24 h-24 rounded-2xl flex items-center justify-center font-bold text-3xl font-bricolage ${
-                    CATEGORY_COLORS[freelancer.category] || CATEGORY_COLORS.Other
-                  }`}
-                >
-                  {getInitials(freelancer.name)}
-                </div>
-              )}
+              <div className="relative inline-block mx-auto mb-1">
+                {freelancer.avatar_url ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={freelancer.avatar_url}
+                    alt={freelancer.name}
+                    className="w-40 h-40 rounded-3xl object-cover ring-4 ring-green-50 shadow-sm"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div
+                    className={`w-40 h-40 rounded-3xl flex items-center justify-center font-bold text-4xl font-bricolage ring-4 ring-green-50 shadow-sm ${CATEGORY_COLORS[freelancer.category] || CATEGORY_COLORS.Other
+                      }`}
+                  >
+                    {getInitials(freelancer.name)}
+                  </div>
+                )}
+                {/* Availability dot */}
+                <span className="absolute bottom-1 right-2 w-6 h-6 bg-green-500 border-4 border-white rounded-full" title="Available for work" />
+              </div>
 
-              {/* Name & Skill */}
-              <div>
-                <h1 className="font-bricolage text-xl font-bold text-slate-900 mb-1">
+              {/* Name, skill & availability */}
+              <div className="w-full">
+                <h1 className="font-bricolage text-2xl font-bold text-slate-900 mb-0">
                   {freelancer.name}
                 </h1>
-                <p className="text-sm font-medium text-green-600 mb-3">
+                <p className="text-sm font-semibold text-green-600 mb-1.5">
                   {freelancer.skill}
                 </p>
-                <div className="flex items-center justify-center gap-2 flex-wrap">
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${badgeColor}`}>
+
+                {/* Availability badge */}
+                <div className="flex items-center justify-center gap-1.5 mb-4">
+                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full">
+                    <Zap size={10} className="fill-green-500 text-green-500" />
+                    Available for work
+                  </span>
+                </div>
+
+                {/* Category + Location */}
+                <div className="flex items-center justify-center gap-4 mt-1">
+                  <span className={`text-xs font-semibold px-3 py-1 rounded-full ${badgeColor}`}>
                     {freelancer.category}
                   </span>
-                  <span className="text-xs text-slate-400">📍 {freelancer.state}</span>
+                  <span className="text-xs font-medium text-slate-500 flex items-center gap-1">
+                    <MapPin size={12} className="text-red-400" />
+                    {freelancer.state}
+                  </span>
                 </div>
               </div>
 
               {/* Rating summary */}
-              {avgRating && (
-                <div className="flex flex-col items-center gap-1">
-                  <StarRating rating={Math.round(Number(avgRating))} />
-                  <p className="text-xs text-slate-400">
-                    {avgRating} / 5 · {reviews.length} review{reviews.length !== 1 ? "s" : ""}
+              {avgRating ? (
+                <div className="w-full pt-3 border-t border-slate-100 flex flex-col items-center gap-1">
+                  <StarRating rating={Math.round(Number(avgRating))} size={18} />
+                  <p className="text-xs text-slate-500">
+                    <span className="font-bold text-slate-700">{avgRating}</span> / 5
+                    {" · "}{reviews.length} review{reviews.length !== 1 ? "s" : ""}
                   </p>
+                </div>
+              ) : (
+                <div className="w-full pt-3 border-t border-slate-100 flex flex-col items-center gap-1">
+                  <StarRating rating={0} size={16} />
+                  <p className="text-xs text-slate-400">No reviews yet</p>
                 </div>
               )}
 
-              {/* Rate */}
-              <div className="w-full pt-3 border-t border-slate-100">
-                <p className="text-xs text-slate-400 mb-0.5">Rate</p>
-                <p className="font-bricolage font-bold text-slate-900 text-lg">
+              {/* Rate — prominent */}
+              <div className="w-full mt-2 mb-3 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-xl px-4 py-2.5 text-center">
+                <p className="text-xs text-green-600 font-semibold mb-0.5 uppercase tracking-wide">Rate</p>
+                <p className="font-bricolage font-black text-green-800 text-3xl leading-tight">
                   {formatRate(freelancer.rate)}
                 </p>
               </div>
@@ -296,21 +349,22 @@ export default function FreelancerProfileClient({
                 rel="noreferrer"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
-                className="flex items-center justify-center gap-2 w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm rounded-xl transition"
+                className="flex items-center justify-center gap-2 w-full h-[54px] bg-green-600 hover:bg-green-700 text-white font-bold text-[15px] rounded-xl transition shadow-sm shadow-green-200"
               >
-                <MessageCircle size={16} /> Contact on WhatsApp
+                <MessageCircle size={18} />
+                Contact on WhatsApp
               </motion.a>
 
               {/* Secondary links */}
-              <div className="w-full flex flex-col gap-2">
+              <div className="w-full flex flex-col gap-2 mt-1">
                 {freelancer.portfolio && (
                   <a
                     href={freelancer.portfolio}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm rounded-xl transition"
+                    className="flex items-center justify-center gap-2 w-full h-[52px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[15px] rounded-xl transition"
                   >
-                    <ExternalLink size={14} /> View Portfolio
+                    <ExternalLink size={16} /> View Portfolio
                   </a>
                 )}
                 {freelancer.video_intro && (
@@ -318,65 +372,91 @@ export default function FreelancerProfileClient({
                     href={freelancer.video_intro}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center justify-center gap-2 w-full py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-medium text-sm rounded-xl transition"
+                    className="flex items-center justify-center gap-2 w-full h-[52px] bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-[15px] rounded-xl transition"
                   >
-                    <Play size={14} /> Watch Intro Video
+                    <Play size={16} /> Watch Intro Video
                   </a>
                 )}
                 {isOwnProfile && (
                   <button
                     onClick={() => router.push("/profile")}
-                    className="flex items-center justify-center gap-2 w-full py-2.5 border border-green-200 text-green-600 hover:bg-green-50 font-medium text-sm rounded-xl transition cursor-pointer bg-transparent"
+                    className="flex items-center justify-center gap-2 w-full h-[52px] border border-green-200 text-green-600 hover:bg-green-50 font-semibold text-[15px] rounded-xl transition cursor-pointer bg-transparent"
                   >
-                    <Pencil size={14} /> Edit My Profile
+                    <Pencil size={16} /> Edit My Profile
                   </button>
                 )}
               </div>
-            </motion.div>
-          </div>
+            </div>
+          </motion.div>
 
           {/* ── RIGHT COLUMN ── */}
-          <div className="lg:col-span-2 flex flex-col gap-5">
+          <div className="flex flex-col gap-5">
 
             {/* About */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.05 }}
               className="bg-white rounded-2xl border border-gray-200 p-6"
             >
               <h2 className="font-bricolage font-bold text-slate-900 mb-3">About</h2>
               <BioText bio={freelancer.bio} />
             </motion.div>
 
+            {/* Skills */}
+            {freelancer.skill && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.08 }}
+                className="bg-white rounded-2xl border border-gray-200 p-6"
+              >
+                <h2 className="font-bricolage font-bold text-slate-900 mb-3">Core Skills</h2>
+                <SkillChips skill={freelancer.skill} />
+              </motion.div>
+            )}
+
+            {/* Portfolio */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <PortfolioSection
+                freelancerId={freelancer.id}
+                canEdit={isOwnProfile}
+              />
+            </motion.div>
+
             {/* Reviews */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ delay: 0.15 }}
               className="bg-white rounded-2xl border border-gray-200 p-6"
             >
               <div className="flex items-center justify-between mb-5">
                 <h2 className="font-bricolage font-bold text-slate-900">
                   Reviews{" "}
                   {reviews.length > 0 && (
-                    <span className="text-slate-400 font-normal text-sm">
+                    <span className="text-slate-500 font-normal text-sm">
                       ({reviews.length})
                     </span>
                   )}
                 </h2>
                 {canReview && (
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
                     onClick={() => setShowReviewForm(!showReviewForm)}
-                    className="text-sm font-semibold text-green-600 hover:text-green-700 bg-transparent border-none cursor-pointer"
+                    className="text-sm font-semibold text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-3 py-1.5 rounded-lg transition bg-transparent border-none cursor-pointer"
                   >
                     {showReviewForm ? "Cancel" : "+ Review"}
-                  </button>
+                  </motion.button>
                 )}
                 {!user && (
                   <button
                     onClick={() => router.push("/auth")}
-                    className="text-xs text-slate-400 hover:text-green-600 bg-transparent border-none cursor-pointer"
+                    className="text-xs text-slate-500 hover:text-green-600 bg-transparent border-none cursor-pointer"
                   >
                     Sign in to review
                   </button>
@@ -384,45 +464,46 @@ export default function FreelancerProfileClient({
               </div>
 
               {/* Review form */}
-              {showReviewForm && canReview && (
-                <motion.form
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  onSubmit={handleSubmitReview}
-                  className="bg-slate-50 rounded-xl p-4 mb-5 flex flex-col gap-3"
-                >
-                  <div>
-                    <p className="text-xs font-medium text-slate-600 mb-2">
-                      Tap to rate
-                    </p>
-                    <StarRating rating={rating} onRate={setRating} readonly={false} />
-                  </div>
-                  <textarea
-                    value={comment}
-                    onChange={e => setComment(e.target.value)}
-                    rows={3}
-                    placeholder="How was your experience working with this freelancer?"
-                    className={inputClass}
-                  />
-
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold text-sm rounded-xl transition cursor-pointer border-none"
+              <AnimatePresence>
+                {showReviewForm && canReview && (
+                  <motion.form
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    onSubmit={handleSubmitReview}
+                    className="overflow-hidden"
                   >
-                    {submitting ? "Submitting..." : "Submit Review"}
-                  </button>
-                </motion.form>
-              )}
+                    <div className="bg-slate-50 rounded-xl p-4 mb-5 flex flex-col gap-3">
+                      <div>
+                        <p className="text-xs font-medium text-slate-600 mb-2">Tap to rate</p>
+                        <StarRating rating={rating} onRate={setRating} readonly={false} size={22} />
+                      </div>
+                      <textarea
+                        value={comment}
+                        onChange={e => setComment(e.target.value)}
+                        rows={3}
+                        placeholder="How was your experience working with this freelancer?"
+                        className={inputClass}
+                      />
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className="w-full py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold text-sm rounded-xl transition cursor-pointer border-none"
+                      >
+                        {submitting ? "Submitting..." : "Submit Review"}
+                      </button>
+                    </div>
+                  </motion.form>
+                )}
+              </AnimatePresence>
 
               {/* User's own review */}
               {userReview && (
                 <div className="bg-green-50 border border-green-100 rounded-xl p-4 mb-4">
                   <div className="flex items-center justify-between mb-2">
                     <div>
-                      <p className="text-xs font-semibold text-slate-700 mb-1">
-                        Your Review
-                      </p>
+                      <p className="text-xs font-semibold text-slate-700 mb-1">Your Review</p>
                       <StarRating rating={userReview.rating} />
                     </div>
                     <button
@@ -440,10 +521,7 @@ export default function FreelancerProfileClient({
               {loadingReviews ? (
                 <div className="flex flex-col gap-3">
                   {[1, 2].map(i => (
-                    <div
-                      key={i}
-                      className="animate-pulse border border-slate-100 rounded-xl p-4"
-                    >
+                    <div key={i} className="animate-pulse border border-slate-100 rounded-xl p-4">
                       <div className="w-24 h-3 bg-slate-200 rounded mb-2" />
                       <div className="w-full h-3 bg-slate-200 rounded mb-1" />
                       <div className="w-3/4 h-3 bg-slate-200 rounded" />
@@ -451,59 +529,54 @@ export default function FreelancerProfileClient({
                   ))}
                 </div>
               ) : reviews.filter(r => r.reviewer_id !== user?.id).length === 0 ? (
-                <div className="text-center py-8 flex flex-col items-center justify-center">
-                  <Star className="text-slate-300 fill-transparent mb-2" size={32} />
-                  <p className="text-sm text-slate-400">
-                    No reviews yet — be the first!
+                <div className="text-center py-10 flex flex-col items-center justify-center">
+                  <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                    <Star className="text-slate-200 fill-transparent" size={24} />
+                  </div>
+                  <p className="text-sm font-medium text-slate-700 mb-1">No reviews yet</p>
+                  <p className="text-xs text-slate-400">
+                    {user && !isOwnProfile
+                      ? "Be the first to leave a review"
+                      : "Reviews help freelancers get hired faster"}
                   </p>
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
                   {reviews
                     .filter(r => r.reviewer_id !== user?.id)
-                    .map(review => (
-                      <div
+                    .map((review, i) => (
+                      <motion.div
                         key={review.id}
-                        className="border border-slate-100 rounded-xl p-4"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="border border-slate-100 rounded-xl p-4 hover:border-slate-200 transition"
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div>
-                            <p className="text-xs font-semibold text-slate-700 mb-1">
-                              Verified User
-                            </p>
+                            <p className="text-xs font-semibold text-slate-700 mb-1">Verified Client</p>
                             <StarRating rating={review.rating} />
                           </div>
                           <span className="text-xs text-slate-400">
-                            {new Date(review.created_at).toLocaleDateString(
-                              "en-NG",
-                              { day: "numeric", month: "short", year: "numeric" }
-                            )}
+                            {new Date(review.created_at).toLocaleDateString("en-NG", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
                           </span>
                         </div>
-                        <p className="text-sm text-slate-600 mt-2">
-                          {review.comment}
-                        </p>
-                      </div>
+                        <p className="text-sm text-slate-600 mt-2 leading-relaxed">{review.comment}</p>
+                      </motion.div>
                     ))}
                 </div>
               )}
             </motion.div>
+
           </div>
         </div>
       </div>
 
-      {/* Sticky WhatsApp button on mobile */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 lg:hidden z-40">
-        <motion.a
-          href={formatWhatsApp(freelancer.whatsapp)}
-          target="_blank"
-          rel="noreferrer"
-          whileTap={{ scale: 0.97 }}
-          className="flex items-center justify-center gap-2 w-full py-3.5 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm rounded-xl"
-        >
-          <MessageCircle size={16} /> Contact {freelancer.name.split(" ")[0]} on WhatsApp
-        </motion.a>
-      </div>
+      {/* Removed sticky WhatsApp button per layout balance feedback */}
 
     </div>
   );
