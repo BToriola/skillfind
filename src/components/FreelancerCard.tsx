@@ -1,4 +1,5 @@
 "use client";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { MapPin } from "lucide-react";
 import { Freelancer } from "@/types";
@@ -11,11 +12,21 @@ interface FreelancerCardProps {
 }
 
 export default function FreelancerCard({ freelancer, onClick }: FreelancerCardProps) {
+  const router = useRouter();
   const { bg, text } = getCategoryColor(freelancer.category);
+
+  function handleClick() {
+    if (freelancer.slug) {
+      router.push(`/freelancer/${freelancer.slug}`);
+    } else {
+      onClick(); // fallback to modal for old profiles without slug
+    }
+  }
+
   return (
     <motion.div
       className="bg-white border border-slate-200 hover:border-green-200 rounded-2xl p-6 flex flex-col gap-2 cursor-pointer transition-colors duration-200 h-full"
-      onClick={onClick}
+      onClick={handleClick}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4, boxShadow: "0 12px 40px rgba(0,0,0,0.10)" }}

@@ -9,6 +9,7 @@ import { getCategoryColor, getInitials, formatWhatsApp, formatRate } from "@/uti
 import StarRating from "@/components/StarRating";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, ExternalLink, MessageCircle, Star } from "lucide-react";
+import toast from "react-hot-toast";
 
 type Review = {
   id: string;
@@ -34,7 +35,6 @@ export default function ProfileModal({ freelancer, onClose }: ProfileModalProps)
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [reviewError, setReviewError] = useState("");
   const [showReviewForm, setShowReviewForm] = useState(false);
 
   const { bg, text } = getCategoryColor(freelancer.category);
@@ -66,12 +66,11 @@ export default function ProfileModal({ freelancer, onClose }: ProfileModalProps)
   async function handleSubmitReview(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
-    if (rating === 0) { setReviewError("Please select a star rating"); return; }
-    if (!comment.trim()) { setReviewError("Please write a comment"); return; }
-    if (user.id === freelancer.user_id) { setReviewError("You cannot review your own profile"); return; }
+    if (rating === 0) { toast.error("Please select a star rating"); return; }
+    if (!comment.trim()) { toast.error("Please write a comment"); return; }
+    if (user.id === freelancer.user_id) { toast.error("You cannot review your own profile"); return; }
 
     setSubmitting(true);
-    setReviewError("");
     const { error } = await supabase.from("reviews").insert([{
       freelancer_id: freelancer.id,
       reviewer_id: user.id,
@@ -79,7 +78,8 @@ export default function ProfileModal({ freelancer, onClose }: ProfileModalProps)
       comment: comment.trim(),
     }]);
 
-    if (error) { setReviewError(error.message); setSubmitting(false); return; }
+    if (error) { toast.error(error.message); setSubmitting(false); return; }
+    toast.success("Review submitted successfully");
     setRating(0);
     setComment("");
     setShowReviewForm(false);
@@ -223,7 +223,7 @@ export default function ProfileModal({ freelancer, onClose }: ProfileModalProps)
                     placeholder="Share your experience working with this freelancer..."
                     className="w-full px-3 py-2.5 text-sm text-slate-900 bg-white border border-gray-200 rounded-xl outline-none focus:border-green-500 focus:ring-3 focus:ring-green-100 placeholder:text-gray-300 transition resize-none" />
                 </div>
-                {reviewError && <p className="text-xs text-red-500">{reviewError}</p>}
+
                 <button type="submit" disabled={submitting}
                   className="w-full py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold text-sm rounded-xl transition cursor-pointer border-none">
                   {submitting ? "Submitting..." : "Submit Review"}

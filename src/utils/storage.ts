@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { generateSlug } from "./slug";
 
 export async function getFreelancers() {
   const { data, error } = await supabase
@@ -6,7 +7,6 @@ export async function getFreelancers() {
     .select("*")
     .eq("is_approved", true)
     .order("created_at", { ascending: false });
-
   if (error) { console.error(error); return []; }
   return data || [];
 }
@@ -20,15 +20,29 @@ export async function saveFreelancer(freelancer: {
   rate: string;
   whatsapp: string;
   portfolio: string;
+  video_intro?: string;
   user_id: string;
 }) {
+  // Generate a temporary id for slug
+  const tempId = crypto.randomUUID();
+  const slug = generateSlug(freelancer.name, tempId);
+
   const { data, error } = await supabase
     .from("freelancers")
-    .insert([freelancer])
+    .insert([{ ...freelancer, id: tempId, slug }])
     .select()
     .single();
 
   if (error) { console.error(error); return null; }
+  return data;
+}
+
+export async function getFreelancerBySlug(slug: string) {
+  const { data } = await supabase
+    .from("freelancers")
+    .select("*")
+    .eq("slug", slug)
+    .single();
   return data;
 }
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lightbulb, Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
 
 type Props = {
   skill: string;
@@ -16,14 +17,12 @@ export default function AIPriceSuggester({ skill, category, state, onApply }: Pr
   const [experience, setExperience] = useState("");
   const [loading, setLoading] = useState(false);
   const [suggestion, setSuggestion] = useState("");
-  const [error, setError] = useState("");
 
   async function handleSuggest() {
-    if (!experience.trim()) { setError("Please enter your experience level"); return; }
-    if (!skill.trim()) { setError("Please fill in your skill title first"); return; }
+    if (!experience.trim()) { toast.error("Please enter your experience level"); return; }
+    if (!skill.trim()) { toast.error("Please fill in your skill title first"); return; }
 
     setLoading(true);
-    setError("");
     setSuggestion("");
 
     try {
@@ -36,10 +35,10 @@ export default function AIPriceSuggester({ skill, category, state, onApply }: Pr
       if (data.suggestion) {
         setSuggestion(data.suggestion);
       } else {
-        setError(data.error || "Failed to get suggestion. Try again.");
+        toast.error(data.error || "Failed to get suggestion. Try again.");
       }
     } catch {
-      setError("Something went wrong. Try again.");
+      toast.error("Something went wrong. Try again.");
     }
 
     setLoading(false);
@@ -95,7 +94,7 @@ export default function AIPriceSuggester({ skill, category, state, onApply }: Pr
                 </select>
               </div>
 
-              {error && <p className="text-xs text-red-500">{error}</p>}
+
 
               {/* Suggestion result */}
               <AnimatePresence>

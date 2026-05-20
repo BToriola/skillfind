@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { saveFreelancer, getUserFreelancerProfile } from "@/utils/storage";
 import { supabase } from "@/utils/supabase";
 import { CheckCircle, ArrowRight, User, ArrowLeft } from "lucide-react";
+import toast from "react-hot-toast";
 import AIBioGenerator from "@/components/AIBioGenerator";
 import AIPriceSuggester from "@/components/AIPriceSuggester";
 
@@ -24,7 +25,6 @@ function RegisterContent() {
   const [saving, setSaving] = useState(false);
   const [alreadyListed, setAlreadyListed] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true);
-  const [serverError, setServerError] = useState("");
   const [form, setForm] = useState({
     name: "", skill: "", category: "", state: "",
     bio: "", rate: "", whatsapp: "", portfolio: "",
@@ -83,12 +83,11 @@ function RegisterContent() {
     if (!user) return;
 
     setSaving(true);
-    setServerError("");
 
     const result = await saveFreelancer({ ...form, user_id: user.id });
 
     if (!result) {
-      setServerError("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
       setSaving(false);
       return;
     }
@@ -276,11 +275,7 @@ function RegisterContent() {
               <input name="portfolio" value={form.portfolio} onChange={handleChange} placeholder="https://yourportfolio.com" className={inputClass} />
             </div>
 
-            {serverError && (
-              <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-2.5 rounded-xl">
-                {serverError}
-              </div>
-            )}
+
 
             <button type="submit" disabled={saving}
               className="mt-2 w-full py-3.5 bg-green-600 hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl transition cursor-pointer flex items-center justify-center gap-2">

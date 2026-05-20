@@ -4,13 +4,13 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/utils/supabase";
 import { Eye, EyeOff } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [done, setDone] = useState(false);
   const [sessionReady, setSessionReady] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -37,15 +37,14 @@ export default function ResetPasswordPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (password !== confirm) { setError("Passwords do not match"); return; }
-    if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
+    if (password !== confirm) { toast.error("Passwords do not match"); return; }
+    if (password.length < 8) { toast.error("Password must be at least 8 characters"); return; }
 
     setLoading(true);
-    setError("");
 
     const { error } = await supabase.auth.updateUser({ password });
 
-    if (error) { setError(error.message); setLoading(false); return; }
+    if (error) { toast.error(error.message); setLoading(false); return; }
 
     setDone(true);
     setTimeout(() => router.push("/"), 2000);
@@ -138,11 +137,7 @@ export default function ResetPasswordPage() {
                 </div>
               </div>
 
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-2.5 rounded-xl">
-                  {error}
-                </div>
-              )}
+
 
               <button
                 type="submit" disabled={loading}

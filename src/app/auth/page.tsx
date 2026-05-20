@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, signUp, resetPassword } from "@/utils/auth";
 import { supabase } from "@/utils/supabase";
 import { Eye, EyeOff } from "lucide-react";
+import toast from "react-hot-toast";
 
 type Mode = "login" | "signup" | "forgot";
 
@@ -20,7 +21,6 @@ function AuthContent() {
   const [fullName, setFullName] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [resetSent, setResetSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -29,11 +29,10 @@ function AuthContent() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    setError("");
 
     if (mode === "forgot") {
       const { error } = await resetPassword(email);
-      if (error) { setError(error.message); setLoading(false); return; }
+      if (error) { toast.error(error.message); setLoading(false); return; }
       setResetSent(true);
       setLoading(false);
       return;
@@ -41,7 +40,7 @@ function AuthContent() {
 
     if (mode === "signup") {
       const { data, error } = await signUp(email, password, fullName, businessName);
-      if (error) { setError(error.message); setLoading(false); return; }
+      if (error) { toast.error(error.message); setLoading(false); return; }
 
       // If signup, show email confirmation message instead of redirecting
       setResetSent(true); // reuse the same "check email" screen
@@ -51,7 +50,7 @@ function AuthContent() {
 
     if (mode === "login") {
       const { data, error } = await signIn(email, password);
-      if (error) { setError(error.message); setLoading(false); return; }
+      if (error) { toast.error(error.message); setLoading(false); return; }
 
       // Check if user has a freelancer profile
       const { data: profile } = await supabase
@@ -74,7 +73,6 @@ function AuthContent() {
 
   function switchMode(newMode: Mode) {
     setMode(newMode);
-    setError("");
     setResetSent(false);
     setFullName("");
     setBusinessName("");
@@ -204,11 +202,7 @@ function AuthContent() {
                 </div>
               )}
 
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-2.5 rounded-xl">
-                  {error}
-                </div>
-              )}
+
 
               <button
                 type="submit" disabled={loading}

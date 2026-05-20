@@ -10,6 +10,8 @@ export type Freelancer = {
   whatsapp: string;
   portfolio: string;
   avatar_url: string | null;
+  video_intro: string | null;
+  slug: string | null;
   is_approved: boolean;
   created_at: string;
 };

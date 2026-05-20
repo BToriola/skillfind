@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
 
 type Props = {
   name: string;
@@ -16,22 +17,20 @@ export default function AIBioGenerator({ name, skill, state, onGenerated }: Prop
   const [experience, setExperience] = useState("");
   const [strength, setStrength] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
   const inputClass = "w-full px-3.5 py-2.5 text-sm text-slate-900 bg-white border border-gray-200 rounded-xl outline-none focus:border-green-500 focus:ring-3 focus:ring-green-100 placeholder:text-gray-300 transition";
 
   async function handleGenerate() {
     if (!experience.trim() || !strength.trim()) {
-      setError("Please fill in both fields");
+      toast.error("Please fill in both fields");
       return;
     }
     if (!name.trim() || !skill.trim()) {
-      setError("Please fill in your name and skill title first");
+      toast.error("Please fill in your name and skill title first");
       return;
     }
 
     setLoading(true);
-    setError("");
 
     try {
       const res = await fetch("/api/generate-bio", {
@@ -46,10 +45,10 @@ export default function AIBioGenerator({ name, skill, state, onGenerated }: Prop
         setExperience("");
         setStrength("");
       } else {
-        setError(data.error || "Failed to generate bio. Try again.");
+        toast.error(data.error || "Failed to generate bio. Try again.");
       }
     } catch {
-      setError("Something went wrong. Try again.");
+      toast.error("Something went wrong. Try again.");
     }
 
     setLoading(false);
@@ -108,7 +107,7 @@ export default function AIBioGenerator({ name, skill, state, onGenerated }: Prop
                 />
               </div>
 
-              {error && <p className="text-xs text-red-500">{error}</p>}
+
 
               <motion.button
                 type="button"

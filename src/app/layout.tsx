@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Bricolage_Grotesque, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
+import { Toaster } from "react-hot-toast";
 
 const bricolage = Bricolage_Grotesque({
   subsets: ["latin"],
@@ -25,6 +26,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${bricolage.variable} ${dmSans.variable}`}>
       <body className="font-[family-name:var(--font-dm)] bg-[#f5f5f0]" suppressHydrationWarning>
         <AuthProvider>
+          <Toaster
+            position="top-center"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                borderRadius: "12px",
+                fontSize: "14px",
+                fontWeight: "500",
+                fontFamily: "var(--font-dm)",
+                boxShadow: "0 4px 24px rgba(0,0,0,0.10)",
+              },
+              success: {
+                iconTheme: { primary: "#16a34a", secondary: "#fff" },
+              },
+              error: {
+                iconTheme: { primary: "#ef4444", secondary: "#fff" },
+              },
+            }}
+          />
           {children}
         </AuthProvider>
       </body>

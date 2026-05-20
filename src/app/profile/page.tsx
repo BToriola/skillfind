@@ -9,6 +9,8 @@ import { Freelancer } from "@/types";
 import Image from "next/image";
 import AIBioGenerator from "@/components/AIBioGenerator";
 import AIPriceSuggester from "@/components/AIPriceSuggester";
+import { AlertTriangle } from "lucide-react";
+import toast from "react-hot-toast";
 
 const CATEGORIES = ["Technology","Design","Writing","Marketing","Trades","Photography","Education","Other"];
 const NIGERIAN_STATES = ["Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","FCT","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger","Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"];
@@ -40,13 +42,12 @@ export default function ProfilePage() {
   const [deleting, setDeleting] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [serverError, setServerError] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "", skill: "", category: "", state: "",
     bio: "", rate: "", whatsapp: "", portfolio: "",
+    video_intro: "",
   });
 
   useEffect(() => {
@@ -64,6 +65,7 @@ export default function ProfilePage() {
           category: profile.category, state: profile.state,
           bio: profile.bio, rate: profile.rate,
           whatsapp: profile.whatsapp, portfolio: profile.portfolio || "",
+          video_intro: profile.video_intro || "",
         });
         setLoadingProfile(false);
       });
@@ -80,23 +82,22 @@ export default function ProfilePage() {
 
     // Validate file
     if (!file.type.startsWith("image/")) {
-      setServerError("Please upload an image file");
+      toast.error("Please upload an image file");
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      setServerError("Image must be smaller than 2MB");
+      toast.error("Image must be smaller than 2MB");
       return;
     }
 
     // Show preview immediately
     setPreviewUrl(URL.createObjectURL(file));
     setUploadingPhoto(true);
-    setServerError("");
 
     const url = await uploadAvatar(user.id, file);
 
     if (!url) {
-      setServerError("Failed to upload photo. Please try again.");
+      toast.error("Failed to upload photo. Please try again.");
       setPreviewUrl(null);
       setUploadingPhoto(false);
       return;
@@ -116,22 +117,20 @@ export default function ProfilePage() {
     e.preventDefault();
     if (!freelancer) return;
     setSaving(true);
-    setServerError("");
 
     const { error } = await supabase
       .from("freelancers")
       .update({ ...form })
       .eq("id", freelancer.id);
 
+    setSaving(false);
+
     if (error) {
-      setServerError("Failed to save changes. Please try again.");
-      setSaving(false);
+      toast.error("Failed to save changes. Please try again.");
       return;
     }
 
-    setSaved(true);
-    setSaving(false);
-    setTimeout(() => setSaved(false), 3000);
+    toast.success("Profile updated successfully!");
   }
 
   async function handleDelete() {
@@ -139,7 +138,7 @@ export default function ProfilePage() {
     setDeleting(true);
     const { error } = await deleteFreelancer(freelancer.id);
     if (error) {
-      setServerError("Failed to delete profile. Please try again.");
+      toast.error("Failed to delete profile. Please try again.");
       setDeleting(false);
       return;
     }
@@ -188,16 +187,7 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        {saved && (
-          <div className="mb-6 bg-green-50 border border-green-200 text-green-700 text-sm px-4 py-3 rounded-xl">
-            ✓ Profile updated successfully!
-          </div>
-        )}
-        {serverError && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3 rounded-xl">
-            {serverError}
-          </div>
-        )}
+
 
         {/* Photo Upload Card */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 flex items-center gap-6">
@@ -337,6 +327,22 @@ export default function ProfilePage() {
             <input name="portfolio" value={form.portfolio} onChange={handleChange} placeholder="https://yourportfolio.com" className={inputClass} />
           </div>
 
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-700">
+              Video Introduction <span className="text-gray-400 font-normal">(Optional)</span>
+            </label>
+            <input
+              name="video_intro"
+              value={form.video_intro || ""}
+              onChange={handleChange}
+              placeholder="YouTube or Loom URL e.g. https://youtu.be/xxxxx"
+              className={inputClass}
+            />
+            <p className="text-xs text-slate-400">
+              A short intro video builds 3x more trust with clients
+            </p>
+          </div>
+
           <div className="flex items-center gap-3 pt-2">
             <button type="submit" disabled={saving}
               className="flex-1 py-3 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold text-sm rounded-xl transition cursor-pointer border-none">
@@ -353,8 +359,8 @@ export default function ProfilePage() {
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-6">
-          <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-xl">
-            <div className="text-4xl mb-4">⚠️</div>
+          <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-xl flex flex-col items-center">
+            <AlertTriangle className="text-red-500 mb-4" size={40} />
             <h2 className="text-xl font-bold text-slate-900 mb-2">Delete your profile?</h2>
             <p className="text-sm text-slate-400 mb-6">
               This will permanently remove your listing. Clients will no longer be able to find you. This cannot be undone.
