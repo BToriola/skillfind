@@ -6,7 +6,7 @@ export async function signUp(
   fullName: string,
   businessName: string
 ) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
 
   const { data, error } = await supabase.auth.signUp({
     email,

@@ -57,7 +57,9 @@ export default function AIBioGenerator({ name, skill, state, onGenerated }: Prop
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <label className="text-sm font-medium text-gray-700">Professional Bio</label>
+        <label className="text-sm font-medium text-gray-700">
+          Professional Bio <span className="text-gray-400 font-normal">(Optional)</span>
+        </label>
         <motion.button
           type="button"
           whileHover={{ scale: 1.03 }}

@@ -64,9 +64,6 @@ function RegisterContent() {
     if (!form.name.trim()) e.name = "Required";
     if (!form.skill.trim()) e.skill = "Required";
     if (!form.category) e.category = "Required";
-    if (!form.state) e.state = "Required";
-    if (!form.bio.trim()) e.bio = "Required";
-    if (!form.rate.trim()) e.rate = "Required";
     if (!form.whatsapp.trim()) e.whatsapp = "Required";
     return e;
   }
@@ -217,7 +214,9 @@ function RegisterContent() {
                 {errors.category && <span className="text-xs text-red-500">{errors.category}</span>}
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700">State</label>
+                <label className="text-sm font-medium text-gray-700">
+                  State <span className="text-gray-400 font-normal">(Optional)</span>
+                </label>
                 <select name="state" value={form.state} onChange={handleChange} className={errors.state ? inputError : inputClass}>
                   <option value="">Select state</option>
                   {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}

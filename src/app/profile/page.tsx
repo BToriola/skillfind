@@ -274,7 +274,9 @@ export default function ProfilePage() {
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">State</label>
+              <label className="text-sm font-medium text-gray-700">
+                State <span className="text-gray-400 font-normal">(Optional)</span>
+              </label>
               <select name="state" value={form.state} onChange={handleChange} className={inputClass}>
                 {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
@@ -294,7 +296,6 @@ export default function ProfilePage() {
               onChange={handleChange}
               rows={4}
               className={inputClass}
-              required
             />
           </div>
 
@@ -312,7 +313,6 @@ export default function ProfilePage() {
                 onChange={handleChange}
                 placeholder="e.g. ₦5,000/hr or ₦50,000/project"
                 className={inputClass}
-                required
               />
             </div>
             <div className="flex flex-col gap-1.5">
