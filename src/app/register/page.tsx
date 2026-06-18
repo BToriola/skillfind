@@ -181,10 +181,10 @@ function RegisterContent() {
               <span className="text-2xl">🎉</span>
               <div>
                 <p className="text-sm font-semibold text-green-800 mb-0.5">
-                  Welcome to SkillFind!
+                  You're 1 step away from getting discovered!
                 </p>
                 <p className="text-sm text-green-700">
-                  Your account is confirmed. Complete your profile below to appear in the directory and start getting discovered by clients across Nigeria.
+                  Fill in your details below — it takes about 2 minutes. Once done, clients across Nigeria can find and contact you instantly.
                 </p>
               </div>
             </div>

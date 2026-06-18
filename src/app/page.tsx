@@ -115,20 +115,14 @@ export default function HomePage() {
         <div className="bg-green-600 text-white px-6 py-3">
           <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap">
             <p className="text-sm font-medium">
-              👋 You&apos;re signed in but not listed yet — create your profile to get discovered by clients!
+               Takes 2 minutes — list your skills now and start getting found by clients today
             </p>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => router.push("/register")}
                 className="bg-white text-green-600 font-semibold text-xs px-4 py-2 rounded-lg hover:bg-green-50 transition cursor-pointer border-none"
               >
-                Create Profile →
-              </button>
-              <button
-                onClick={() => setShowProfileNudge(false)}
-                className="text-green-200 hover:text-white text-xs bg-transparent border-none cursor-pointer"
-              >
-                Dismiss
+                Complete My Profile →
               </button>
             </div>
           </div>
