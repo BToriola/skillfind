@@ -131,33 +131,7 @@ function AuthContent() {
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
-              {/* Signup only fields */}
-              {mode === "signup" && (
-                <>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-medium text-gray-700">Full Name</label>
-                    <input
-                      type="text" value={fullName}
-                      onChange={e => setFullName(e.target.value)}
-                      placeholder="e.g. Babatunde Adenrele" required
-                      className={inputClass}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-sm font-medium text-gray-700">
-                      Business Name <span className="text-gray-400 font-normal">(Optional)</span>
-                    </label>
-                    <input
-                      type="text" value={businessName}
-                      onChange={e => setBusinessName(e.target.value)}
-                      placeholder="e.g. Adenrele Studios"
-                      className={inputClass}
-                    />
-                    <p className="text-xs text-slate-500">Leave blank if you&apos;re an individual freelancer</p>
-                  </div>
-                </>
-              )}
-
+              {/* 1. Google button — ALWAYS first */}
               {mode !== "forgot" && (
                 <>
                   <motion.button
@@ -186,15 +160,43 @@ function AuthContent() {
                     )}
                   </motion.button>
 
+                  {/* Divider */}
                   <div className="flex items-center gap-3">
                     <div className="flex-1 h-px bg-gray-200" />
-                    <span className="text-xs text-slate-400">or</span>
+                    <span className="text-xs text-slate-400">or continue with email</span>
                     <div className="flex-1 h-px bg-gray-200" />
                   </div>
                 </>
               )}
 
-              {/* Email */}
+              {/* 2. Signup only fields — AFTER Google button */}
+              {mode === "signup" && (
+                <>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-gray-700">Full Name</label>
+                    <input
+                      type="text" value={fullName}
+                      onChange={e => setFullName(e.target.value)}
+                      placeholder="e.g. Babatunde Adenrele" required
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-sm font-medium text-gray-700">
+                      Business Name <span className="text-gray-400 font-normal">(Optional)</span>
+                    </label>
+                    <input
+                      type="text" value={businessName}
+                      onChange={e => setBusinessName(e.target.value)}
+                      placeholder="e.g. Adenrele Studios"
+                      className={inputClass}
+                    />
+                    <p className="text-xs text-slate-500">Leave blank if you&apos;re an individual freelancer</p>
+                  </div>
+                </>
+              )}
+
+              {/* 3. Email */}
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-gray-700">Email Address</label>
                 <input
@@ -205,7 +207,7 @@ function AuthContent() {
                 />
               </div>
 
-              {/* Password — hidden on forgot mode */}
+              {/* 4. Password */}
               {mode !== "forgot" && (
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">
@@ -240,8 +242,7 @@ function AuthContent() {
                 </div>
               )}
 
-
-
+              {/* 5. Submit button */}
               <button
                 type="submit" disabled={loading}
                 className="mt-1 w-full py-3 bg-green-600 hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl transition cursor-pointer"
