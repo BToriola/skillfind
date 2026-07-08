@@ -42,6 +42,19 @@ export async function signIn(email: string, password: string) {
   return { data, error };
 }
 
+export async function signInWithGoogle() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: {
+      redirectTo: `${siteUrl}/`,
+    },
+  });
+
+  return { data, error };
+}
+
 export async function resetPassword(email: string) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "");
   
