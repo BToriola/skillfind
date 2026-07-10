@@ -48,7 +48,7 @@ export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${siteUrl}/`,
+      redirectTo: `${siteUrl}/auth/callback`,
     },
   });
 
@@ -73,6 +73,13 @@ export async function signOut() {
 export async function getUser() {
   const { data: { user } } = await supabase.auth.getUser();
   return user;
+}
+
+export async function setUserType(userId: string, type: "freelancer" | "client") {
+  await supabase
+    .from("profiles")
+    .update({ user_type: type })
+    .eq("id", userId);
 }
 
 export async function getUserProfile() {

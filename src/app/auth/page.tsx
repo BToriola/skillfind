@@ -2,20 +2,21 @@
 
 import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn, signUp, resetPassword, signInWithGoogle } from "@/utils/auth";
+import { signIn, signUp, resetPassword, signInWithGoogle, setUserType } from "@/utils/auth";
 import { supabase } from "@/utils/supabase";
 import { motion } from "framer-motion";
 import { Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 
-type Mode = "login" | "signup" | "forgot";
+type Mode = "login" | "signup" | "forgot" | "role";
 
 function AuthContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<Mode>(
     searchParams.get("mode") === "login" ? "login" :
-    searchParams.get("mode") === "forgot" ? "forgot" : "signup"
+    searchParams.get("mode") === "forgot" ? "forgot" :
+    searchParams.get("mode") === "role" ? "role" : "signup"
   );
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,8 +45,8 @@ function AuthContent() {
       const { data, error } = await signUp(email, password, fullName, businessName);
       if (error) { toast.error(error.message); setLoading(false); return; }
 
-      // If signup, show email confirmation message instead of redirecting
-      setResetSent(true); // reuse the same "check email" screen
+      // After signup, ask the user what role they are
+      setMode("role");
       setLoading(false);
       return;
     }
@@ -93,23 +94,82 @@ function AuthContent() {
           <span>🇳🇬</span>
         </div>
 
-        {/* Check email screen — used for both signup confirmation and password reset */}
-        {resetSent ? (
+        {/* Role selection screen — shown after successful signup */}
+        {mode === "role" ? (
+          <div className="flex flex-col gap-4">
+            <div>
+              <h1 className="font-bricolage text-2xl font-bold text-slate-900 mb-1">
+                How will you use SkillFind?
+              </h1>
+              <p className="text-sm text-slate-400">
+                This helps us give you the right experience
+              </p>
+            </div>
+
+            {/* Freelancer option */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={async () => {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) await setUserType(user.id, "freelancer");
+                router.push("/register?welcome=true");
+              }}
+              className="w-full p-5 border-2 border-gray-200 hover:border-green-500 rounded-2xl text-left transition cursor-pointer bg-white group"
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-2xl shrink-0">
+                  💼
+                </div>
+                <div>
+                  <p className="font-bricolage font-bold text-slate-900 mb-1 group-hover:text-green-700 transition">
+                    I&apos;m a Freelancer
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    I want to list my skills and get discovered by clients across Nigeria
+                  </p>
+                </div>
+              </div>
+            </motion.button>
+
+            {/* Client option */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={async () => {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) await setUserType(user.id, "client");
+                router.push("/");
+              }}
+              className="w-full p-5 border-2 border-gray-200 hover:border-blue-500 rounded-2xl text-left transition cursor-pointer bg-white group"
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-2xl shrink-0">
+                  🔍
+                </div>
+                <div>
+                  <p className="font-bricolage font-bold text-slate-900 mb-1 group-hover:text-blue-700 transition">
+                    I&apos;m Looking to Hire
+                  </p>
+                  <p className="text-sm text-slate-500">
+                    I want to find and contact skilled Nigerian professionals
+                  </p>
+                </div>
+              </div>
+            </motion.button>
+          </div>
+        ) : resetSent ? (
           <div className="text-center">
             <div className="text-5xl mb-4">📧</div>
             <h2 className="font-bricolage text-xl font-bold text-slate-900 mb-2">
               Check your email
             </h2>
             <p className="text-sm text-slate-500 mb-2">
-              {mode === "signup"
-                ? "We sent a confirmation link to"
-                : "We sent a password reset link to"}
+              We sent a password reset link to
             </p>
             <p className="text-sm font-semibold text-slate-700 mb-4">{email}</p>
             <p className="text-sm text-slate-500 mb-6">
-              {mode === "signup"
-                ? "Click the link in your email to verify your account before signing in."
-                : "Click the link in your email to reset your password."}
+              Click the link in your email to reset your password.
             </p>
             <button
               onClick={() => { switchMode("login"); setResetSent(false); }}
