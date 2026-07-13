@@ -43,12 +43,12 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signInWithGoogle() {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost:3000");
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${siteUrl}/auth/callback`,
+      redirectTo: `${siteUrl}/auth`,
     },
   });
 

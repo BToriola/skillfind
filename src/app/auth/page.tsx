@@ -27,8 +27,31 @@ function AuthContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  useEffect(() => {
+    // Handle implicit flow — token comes back in URL hash
+    const hash = window.location.hash;
+    if (hash && hash.includes("access_token")) {
+      supabase.auth.getSession().then(async ({ data: { session } }) => {
+        if (session) {
+          // Check if they have a freelancer profile
+          const { data: freelancer } = await supabase
+            .from("freelancers")
+            .select("id")
+            .eq("user_id", session.user.id)
+            .single();
 
+          // Clean the hash from URL
+          window.history.replaceState(null, "", window.location.pathname);
 
+          if (!freelancer) {
+            router.push("/auth?mode=role");
+          } else {
+            router.push("/");
+          }
+        }
+      });
+    }
+  }, [router]);
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
