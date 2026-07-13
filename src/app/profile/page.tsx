@@ -12,26 +12,15 @@ import AIPriceSuggester from "@/components/AIPriceSuggester";
 import PortfolioSection from "@/components/PortfolioSection";
 import { AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
+import { getInitials, getCategoryColor } from "@/utils/helpers";
 
-const CATEGORIES = ["Technology","Design","Writing","Marketing","Trades","Photography","Education","Other"];
-const NIGERIAN_STATES = ["Abia","Adamawa","Akwa Ibom","Anambra","Bauchi","Bayelsa","Benue","Borno","Cross River","Delta","Ebonyi","Edo","Ekiti","Enugu","FCT","Gombe","Imo","Jigawa","Kaduna","Kano","Katsina","Kebbi","Kogi","Kwara","Lagos","Nasarawa","Niger","Ogun","Ondo","Osun","Oyo","Plateau","Rivers","Sokoto","Taraba","Yobe","Zamfara"];
+import { CATEGORIES, NIGERIAN_STATES } from "@/constants";
 
 const inputClass = "w-full px-3.5 py-2.5 text-sm text-slate-900 bg-white border border-gray-200 rounded-xl outline-none focus:border-green-500 focus:ring-3 focus:ring-green-100 placeholder:text-gray-300 transition appearance-none resize-none";
 
-const AVATAR_COLORS: Record<string, string> = {
-  Technology: "bg-blue-100 text-blue-700",
-  Design: "bg-pink-100 text-pink-700",
-  Writing: "bg-yellow-100 text-yellow-700",
-  Marketing: "bg-orange-100 text-orange-700",
-  Trades: "bg-green-100 text-green-700",
-  Photography: "bg-purple-100 text-purple-700",
-  Education: "bg-cyan-100 text-cyan-700",
-  Other: "bg-slate-100 text-slate-600",
-};
 
-function getInitials(name: string) {
-  return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-}
+
+
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -147,7 +136,8 @@ export default function ProfilePage() {
   }
 
   const displayPhoto = previewUrl || avatarUrl;
-  const avatarColor = AVATAR_COLORS[form.category] || AVATAR_COLORS.Other;
+  const avatarColor = getCategoryColor(form.category);
+  const avatarClass = `${avatarColor.bg} ${avatarColor.text}`;
 
   if (loading || loadingProfile) {
     return (
@@ -203,7 +193,7 @@ export default function ProfilePage() {
                 />
               </div>
             ) : (
-              <div className={`w-20 h-20 rounded-2xl flex items-center justify-center font-bold text-2xl ${avatarColor}`}>
+              <div className={`w-20 h-20 rounded-2xl flex items-center justify-center font-bold text-2xl ${avatarClass}`}>
                 {getInitials(form.name || "?")}
               </div>
             )}

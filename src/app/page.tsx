@@ -205,10 +205,10 @@ export default function HomePage() {
             )}
           </div>
           <select className={selectClass} value={category} onChange={e => setCategory(e.target.value)}>
-            {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            {["All Categories", ...CATEGORIES].map(c => <option key={c} value={c}>{c}</option>)}
           </select>
           <select className={selectClass} value={state} onChange={e => setState(e.target.value)}>
-            {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+            {["All States", ...NIGERIAN_STATES].map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
         {(search || category !== "All Categories" || state !== "All States") && (

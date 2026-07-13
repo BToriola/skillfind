@@ -10,8 +10,7 @@ import toast from "react-hot-toast";
 import AIBioGenerator from "@/components/AIBioGenerator";
 import AIPriceSuggester from "@/components/AIPriceSuggester";
 
-const CATEGORIES = ["Technology", "Design", "Writing", "Marketing", "Trades", "Photography", "Education", "Other"];
-const NIGERIAN_STATES = ["Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"];
+import { CATEGORIES, NIGERIAN_STATES } from "@/constants";
 
 const inputClass = "w-full px-3.5 py-2.5 text-sm text-slate-900 bg-white border border-gray-200 rounded-xl outline-none focus:border-green-500 focus:ring-3 focus:ring-green-100 placeholder:text-gray-300 transition appearance-none resize-none";
 const inputError = "w-full px-3.5 py-2.5 text-sm text-slate-900 bg-white border border-red-400 rounded-xl outline-none placeholder:text-gray-300 transition appearance-none resize-none";

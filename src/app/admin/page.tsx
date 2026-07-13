@@ -6,6 +6,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { supabase } from "@/utils/supabase";
 import { Freelancer } from "@/types";
 import { Briefcase, Fingerprint, Award, MapPinned } from "lucide-react";
+import { getInitials } from "@/utils/helpers";
 
 type Profile = {
   id: string;
@@ -35,9 +36,7 @@ type Stats = {
 
 type Tab = "overview" | "freelancers" | "users" | "reviews";
 
-function getInitials(name: string) {
-  return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-}
+
 
 export default function AdminPage() {
   const router = useRouter();

@@ -20,6 +20,7 @@ import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 import PortfolioSection from "@/components/PortfolioSection";
 import { formatRate, formatWhatsApp } from "@/utils/helpers";
+import StarRating from "@/components/StarRating";
 
 type Review = {
   id: string;
@@ -46,45 +47,6 @@ function getInitials(name: string) {
 }
 
 
-
-function StarRating({
-  rating,
-  onRate,
-  readonly = true,
-  size = 16,
-}: {
-  rating: number;
-  onRate?: (r: number) => void;
-  readonly?: boolean;
-  size?: number;
-}) {
-  const [hovered, setHovered] = useState(0);
-  return (
-    <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map(star => (
-        <button
-          key={star}
-          type="button"
-          disabled={readonly}
-          onClick={() => onRate?.(star)}
-          onMouseEnter={() => !readonly && setHovered(star)}
-          onMouseLeave={() => !readonly && setHovered(0)}
-          className={`transition border-none bg-transparent ${readonly ? "cursor-default" : "cursor-pointer"
-            }`}
-        >
-          <Star
-            size={size}
-            className={
-              star <= (hovered || rating)
-                ? "text-yellow-400 fill-yellow-400"
-                : "text-slate-200 fill-transparent"
-            }
-          />
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function BioText({ bio }: { bio: string }) {
   const [expanded, setExpanded] = useState(false);
