@@ -6,7 +6,6 @@ export async function proxy(req: NextRequest) {
   const res = NextResponse.next();
   const { pathname } = req.nextUrl;
 
-  // ── BUILD SSR SUPABASE CLIENT ──
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -27,9 +26,7 @@ export async function proxy(req: NextRequest) {
 
   // ── ADMIN ROUTE GUARD ──
   if (pathname.startsWith("/admin")) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
       return NextResponse.redirect(new URL("/auth?mode=login", req.url));
@@ -48,24 +45,25 @@ export async function proxy(req: NextRequest) {
 
   // ── PROTECTED ROUTES (/profile) ──
   if (pathname.startsWith("/profile")) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.redirect(new URL("/auth?mode=login", req.url));
     }
   }
 
   // ── FORCE FREELANCERS TO COMPLETE PROFILE ──
-  // Public paths are exempt from the freelancer-profile check.
-  const publicPaths = ["/auth", "/register", "/reset-password", "/freelancer", "/api", "/admin"];
-  const isPublicPath = publicPaths.some((p) => pathname.startsWith(p));
+  const publicPaths = [
+    "/auth",
+    "/register",
+    "/reset-password",
+    "/freelancer",
+    "/api",
+    "/admin",
+  ];
+  const isPublicPath = publicPaths.some(p => pathname.startsWith(p));
 
   if (!isPublicPath) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
 
     if (user) {
       const { data: profile } = await supabase
@@ -74,7 +72,6 @@ export async function proxy(req: NextRequest) {
         .eq("id", user.id)
         .single();
 
-      // Only freelancers who haven't finished their profile get redirected
       if (profile?.user_type === "freelancer") {
         const { data: freelancer } = await supabase
           .from("freelancers")
@@ -83,10 +80,11 @@ export async function proxy(req: NextRequest) {
           .single();
 
         if (!freelancer) {
-          return NextResponse.redirect(new URL("/register?welcome=true", req.url));
+          return NextResponse.redirect(
+            new URL("/register?welcome=true", req.url)
+          );
         }
       }
-      // Clients and unknowns pass through freely
     }
   }
 
@@ -95,9 +93,6 @@ export async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except Next.js internals and static assets.
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
