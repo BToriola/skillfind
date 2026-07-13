@@ -26,32 +26,27 @@ function AuthContent() {
   const [resetSent, setResetSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [checkingHash, setCheckingHash] = useState(false);
 
   useEffect(() => {
-    // Handle implicit flow — token comes back in URL hash
-    const hash = window.location.hash;
-    if (hash && hash.includes("access_token")) {
-      supabase.auth.getSession().then(async ({ data: { session } }) => {
-        if (session) {
-          // Check if they have a freelancer profile
-          const { data: freelancer } = await supabase
-            .from("freelancers")
-            .select("id")
-            .eq("user_id", session.user.id)
-            .single();
-
-          // Clean the hash from URL
-          window.history.replaceState(null, "", window.location.pathname);
-
-          if (!freelancer) {
-            router.push("/auth?mode=role");
-          } else {
+    // If hash contains access_token it's implicit flow fallback
+    // Show loading and wait for supabase to process it
+    if (window.location.hash.includes("access_token")) {
+      setCheckingHash(true);
+      // Give supabase time to process the hash
+      setTimeout(() => {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) {
+            window.history.replaceState(null, "", window.location.pathname);
             router.push("/");
+          } else {
+            setCheckingHash(false);
           }
-        }
-      });
+        });
+      }, 500);
     }
   }, [router]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -106,7 +101,20 @@ function AuthContent() {
 
   const inputClass = "w-full px-3.5 py-2.5 text-sm text-slate-900 bg-white border border-gray-200 rounded-xl outline-none focus:border-green-500 focus:ring-3 focus:ring-green-100 placeholder:text-gray-300 transition";
 
+  // Show loading instead of flashing signup form
+  if (checkingHash) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-3xl mb-3">🔄</div>
+          <p className="text-sm text-slate-400">Signing you in...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
+
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-lg p-10">
 

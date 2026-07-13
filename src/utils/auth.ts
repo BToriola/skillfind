@@ -43,15 +43,20 @@ export async function signIn(email: string, password: string) {
 }
 
 export async function signInWithGoogle() {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+  const siteUrl = typeof window !== "undefined"
+    ? window.location.origin
+    : process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${siteUrl}/auth`,
+      redirectTo: `${siteUrl}/auth/callback`,
+      queryParams: {
+        access_type: "offline",
+        prompt: "consent",
+      },
     },
   });
-
   return { data, error };
 }
 

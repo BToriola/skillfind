@@ -1,17 +1,17 @@
 import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
-  const { searchParams, origin } = new URL(req.url);
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin;
+  const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
   if (!code) {
-    // No code — something went wrong; send to auth
-    return NextResponse.redirect(`${siteUrl}/auth?mode=login`);
+    return NextResponse.redirect(`${siteUrl}/auth?error=no_code`);
   }
 
-  const res = NextResponse.next();
+  const cookieStore = await cookies();
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,65 +19,53 @@ export async function GET(req: NextRequest) {
     {
       cookies: {
         getAll() {
-          return req.cookies.getAll();
+          return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            res.cookies.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
         },
       },
     }
   );
 
-  // Exchange the OAuth code for a session
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-  if (error || !data.user) {
-    console.error("OAuth callback error:", error?.message);
-    return NextResponse.redirect(`${siteUrl}/auth?mode=login`);
+  if (error || !data.session) {
+    console.error("Callback error:", error);
+    return NextResponse.redirect(`${siteUrl}/auth?error=callback_failed`);
   }
 
-  // Check whether this Google user already has a profile row
+  const user = data.session.user;
+
+  // Check if profile exists
   const { data: profile } = await supabase
     .from("profiles")
     .select("id, user_type")
-    .eq("id", data.user.id)
+    .eq("id", user.id)
     .single();
 
   if (!profile) {
-    // Brand-new Google user — create their profile row then ask for role
-    await supabase.from("profiles").insert([
-      {
-        id: data.user.id,
-        email: data.user.email,
-        full_name: data.user.user_metadata?.full_name || "",
-      },
-    ]);
-
-    const redirect = NextResponse.redirect(`${siteUrl}/auth?mode=role`);
-    // Carry the session cookies over to the redirect response
-    res.cookies.getAll().forEach((c) => redirect.cookies.set(c.name, c.value));
-    return redirect;
+    // Brand new Google user — create profile
+    await supabase.from("profiles").insert([{
+      id: user.id,
+      email: user.email,
+      full_name: user.user_metadata?.full_name || "",
+    }]);
+    return NextResponse.redirect(`${siteUrl}/auth?mode=role`);
   }
 
-  // Returning Google user — check if they're a freelancer who hasn't finished their profile
-  if (profile.user_type === "freelancer") {
-    const { data: freelancer } = await supabase
-      .from("freelancers")
-      .select("id")
-      .eq("user_id", data.user.id)
-      .single();
+  // Check if they have a freelancer profile
+  const { data: freelancer } = await supabase
+    .from("freelancers")
+    .select("id")
+    .eq("user_id", user.id)
+    .single();
 
-    if (!freelancer) {
-      const redirect = NextResponse.redirect(`${siteUrl}/register?welcome=true`);
-      res.cookies.getAll().forEach((c) => redirect.cookies.set(c.name, c.value));
-      return redirect;
-    }
+  if (profile.user_type === "freelancer" && !freelancer) {
+    return NextResponse.redirect(`${siteUrl}/register?welcome=true`);
   }
 
-  // All good — send them home
-  const redirect = NextResponse.redirect(`${siteUrl}/`);
-  res.cookies.getAll().forEach((c) => redirect.cookies.set(c.name, c.value));
-  return redirect;
+  return NextResponse.redirect(`${siteUrl}/`);
 }
