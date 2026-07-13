@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, signUp, resetPassword, signInWithGoogle, setUserType } from "@/utils/auth";
 import { supabase } from "@/utils/supabase";
 import { motion } from "framer-motion";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Wand2, Telescope } from "lucide-react";
 import toast from "react-hot-toast";
 
 type Mode = "login" | "signup" | "forgot" | "role";
@@ -149,8 +149,8 @@ function AuthContent() {
               className="w-full p-5 border-2 border-gray-200 hover:border-green-500 rounded-2xl text-left transition cursor-pointer bg-white group"
             >
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-2xl shrink-0">
-                  💼
+                <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-green-600 transition-colors">
+                  <Wand2 size={22} className="text-green-600 group-hover:text-white transition-colors" />
                 </div>
                 <div>
                   <p className="font-bricolage font-bold text-slate-900 mb-1 group-hover:text-green-700 transition">
@@ -175,8 +175,8 @@ function AuthContent() {
               className="w-full p-5 border-2 border-gray-200 hover:border-blue-500 rounded-2xl text-left transition cursor-pointer bg-white group"
             >
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-2xl shrink-0">
-                  🔍
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-blue-600 transition-colors">
+                  <Telescope size={22} className="text-blue-600 group-hover:text-white transition-colors" />
                 </div>
                 <div>
                   <p className="font-bricolage font-bold text-slate-900 mb-1 group-hover:text-blue-700 transition">
