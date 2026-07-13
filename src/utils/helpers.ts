@@ -24,16 +24,25 @@ export function formatWhatsApp(number: string) {
 
 export function formatRate(rate: string) {
   if (!rate) return rate;
-  const trimmed = rate.trim();
 
-  // Add ₦ if missing
-  const withSymbol = trimmed.startsWith("₦") ? trimmed : `₦${trimmed}`;
+  // Helper: format a single number string → ₦X,XXX
+  function formatSingle(val: string): string {
+    const stripped = val.trim().replace(/[₦,\s]/g, "");
+    const num = parseInt(stripped, 10);
+    if (isNaN(num)) return val.trim();
+    return `₦${num.toLocaleString("en-NG")}`;
+  }
 
-  // Format any plain number sequence that doesn't already have commas
-  // e.g. 1000000 → 1,000,000 but leave 1,000,000 alone
-  return withSymbol.replace(/\d+/g, (num) => {
-    // Only format if the number is long enough to need commas
-    if (num.length <= 3) return num;
-    return parseInt(num).toLocaleString("en-NG");
-  });
+  // Detect a range — split on dash, en-dash, em-dash, slash, "to", "–", "-"
+  const rangeSeparator = /\s*[-–—\/](?![\d,]*\s*(?:per|\/|hr|hour|day|month|yr|year|wk|week))\s*|\s+(?:to|and)\s+/i;
+  const parts = rate.trim().split(rangeSeparator);
+
+  if (parts.length === 2) {
+    const lo = formatSingle(parts[0]);
+    const hi = formatSingle(parts[1]);
+    return `${lo} – ${hi}`;
+  }
+
+  // Single value
+  return formatSingle(rate);
 }

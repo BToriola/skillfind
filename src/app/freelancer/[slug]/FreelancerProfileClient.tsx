@@ -19,6 +19,7 @@ import { supabase } from "@/utils/supabase";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 import PortfolioSection from "@/components/PortfolioSection";
+import { formatRate, formatWhatsApp } from "@/utils/helpers";
 
 type Review = {
   id: string;
@@ -44,18 +45,7 @@ function getInitials(name: string) {
   return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
 }
 
-function formatRate(rate: string) {
-  if (!rate) return rate;
-  const trimmed = rate.trim();
-  if (trimmed.includes("₦")) return trimmed;
-  return `₦${trimmed}`;
-}
 
-function formatWhatsApp(number: string) {
-  const cleaned = number.replace(/\D/g, "");
-  const international = cleaned.startsWith("0") ? "234" + cleaned.slice(1) : cleaned;
-  return `https://wa.me/${international}`;
-}
 
 function StarRating({
   rating,
