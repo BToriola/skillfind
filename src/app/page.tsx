@@ -9,7 +9,7 @@ import { Freelancer } from "@/types";
 import { CATEGORIES, NIGERIAN_STATES } from "@/constants";
 import FreelancerCard from "@/components/FreelancerCard";
 import ProfileModal from "@/components/ProfileModal";
-import { Search, LogOut, Plus, User, CheckCircle, X, Globe, MessageCircle } from "lucide-react";
+import { Search, LogOut, Plus, User, CheckCircle, X, Globe, MessageCircle, Menu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function HomePage() {
@@ -24,6 +24,7 @@ export default function HomePage() {
   const [selected, setSelected] = useState<Freelancer | null>(null);
   const [hasProfile, setHasProfile] = useState(false);
   const [showProfileNudge, setShowProfileNudge] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     getFreelancers().then((data) => {
@@ -47,20 +48,22 @@ export default function HomePage() {
     return matchSearch && matchCat && matchState;
   });
 
-  const selectClass = "px-4 py-2.5 text-sm text-slate-700 bg-white border border-slate-200 rounded-full outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/10 transition appearance-none cursor-pointer";
+  const selectClass = "px-4 py-2.5 text-sm text-slate-700 bg-white border border-slate-200 rounded-full outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/10 transition appearance-none cursor-pointer w-full md:w-auto";
 
   return (
     <div className="min-h-screen bg-[#f5f5f0]">
 
       {/* Navbar */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="w-8 h-8 bg-green-700 text-white font-extrabold text-base rounded-lg flex items-center justify-center">S</span>
             <span className="font-bricolage font-bold text-lg text-slate-900 tracking-tight">SkillFind</span>
             <Globe className="text-green-600" size={20} />
           </div>
-          <div className="flex items-center gap-3">
+
+          {/* Desktop Nav Items */}
+          <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
                 {hasProfile ? (
@@ -72,7 +75,7 @@ export default function HomePage() {
                   <motion.button onClick={() => router.push("/register")}
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
-                    className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition cursor-pointer flex items-center gap-2">
+                    className="bg-green-600 hover:bg-green-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition cursor-pointer flex items-center gap-2 border-none">
                     List Your Skills <Plus size={16} />
                   </motion.button>
                 )}
@@ -108,7 +111,72 @@ export default function HomePage() {
               </div>
             )}
           </div>
+
+          {/* Mobile Menu Toggle */}
+          <button 
+            className="md:hidden p-2 -mr-2 text-green-600 hover:text-green-700 bg-transparent border-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-500/20 rounded-lg transition-colors"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
+
+        {/* Mobile Dropdown */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="md:hidden overflow-hidden bg-white border-t border-slate-100"
+            >
+              <div className="flex flex-col px-6 py-4 gap-4">
+                {user ? (
+                  <>
+                    {hasProfile ? (
+                      <button onClick={() => { router.push("/profile"); setMobileMenuOpen(false); }}
+                        className="w-full text-left font-semibold text-green-600 bg-transparent border-none py-2 cursor-pointer">
+                        Edit Profile
+                      </button>
+                    ) : (
+                      <button onClick={() => { router.push("/register"); setMobileMenuOpen(false); }}
+                        className="w-full bg-green-600 text-white font-semibold py-2.5 rounded-lg flex items-center justify-center gap-2 border-none">
+                        List Your Skills <Plus size={16} />
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <button
+                        onClick={() => { router.push("/admin"); setMobileMenuOpen(false); }}
+                        className="w-full text-left font-semibold text-red-600 bg-transparent border-none py-2 cursor-pointer"
+                      >
+                        Admin Dashboard
+                      </button>
+                    )}
+                    <button onClick={async () => { await signOut(); router.refresh(); setMobileMenuOpen(false); }}
+                      className="w-full text-left font-semibold text-slate-500 bg-transparent border-none py-2 cursor-pointer flex items-center gap-2">
+                      <LogOut size={16} /> Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => { router.push("/auth?mode=login"); setMobileMenuOpen(false); }}
+                      className="w-full text-left font-semibold text-slate-600 bg-transparent border-none py-2 cursor-pointer"
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      onClick={() => { router.push("/auth"); setMobileMenuOpen(false); }}
+                      className="w-full bg-green-600 text-white font-semibold py-2.5 rounded-lg border-none"
+                    >
+                      Sign Up Free
+                    </button>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       {showProfileNudge && !hasProfile && user && (
@@ -130,15 +198,15 @@ export default function HomePage() {
       )}
 
       {/* Hero */}
-      <section className="max-w-2xl mx-auto text-center px-6 pt-8 pb-5">
-        <span className="inline-block bg-green-100 text-green-700 text-xs font-medium px-3 py-1 rounded-full uppercase tracking-wide mb-3">
+      <section className="max-w-3xl mx-auto text-center px-6 pt-6 pb-4 md:pt-20 md:pb-12">
+        <span className="inline-block bg-green-100 text-green-700 text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full uppercase tracking-wide mb-4">
           Nigeria&apos;s Freelancer Directory — Free to Join
         </span>
-        <h1 className="font-bricolage text-3xl sm:text-4xl font-extrabold text-slate-900 leading-tight tracking-tight mb-3">
-          Find skilled professionals.<br />
+        <h1 className="font-bricolage text-3xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight tracking-tight mb-4">
+          Find skilled professionals.<br className="hidden sm:block" />
           <span className="text-green-600">Get hired across Nigeria.</span>
         </h1>
-        <p className="text-sm text-slate-500 mb-6">
+        <p className="text-base md:text-lg text-slate-500 mb-8 max-w-2xl mx-auto">
           SkillFind connects Nigerian freelancers with clients who need their skills —
           no bidding wars, no commissions, just simple direct contact.
         </p>
@@ -163,8 +231,8 @@ export default function HomePage() {
       </section>
 
       {/* Stats bar */}
-      <div className="max-w-2xl mx-auto px-6 pb-6">
-        <div className="bg-white border border-gray-200 rounded-xl px-6 py-3 flex items-center justify-center gap-6 flex-wrap">
+      <div className="hidden md:block max-w-2xl mx-auto px-6 pb-6">
+        <div className="bg-white border border-gray-200 rounded-xl px-6 py-4 flex items-center justify-center gap-6 flex-wrap shadow-sm">
           <div className="text-center">
             <p className="font-bricolage text-lg font-bold text-slate-900">{freelancers.length}+</p>
             <p className="text-xs text-slate-500 mt-0.5">Freelancers</p>
@@ -189,27 +257,29 @@ export default function HomePage() {
 
       {/* Filters */}
       <div id="directory" className="max-w-6xl mx-auto px-6 pb-3">
-        <div className="flex gap-3 flex-wrap mb-3">
+        <div className="flex flex-col md:flex-row gap-2 md:gap-3 mb-3">
           <div className="relative flex items-center flex-1 min-w-60">
             <Search className="absolute left-3 text-slate-500" size={16} />
             <input
-              className="w-full pl-9 pr-9 py-3.5 text-sm text-slate-900 bg-white border border-slate-200 rounded-full outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-slate-300 transition"
+              className="w-full pl-9 pr-9 py-2.5 md:py-3.5 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg md:rounded-full outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-slate-300 transition"
               placeholder="Search by name or skill..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
             {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 text-slate-500 hover:text-slate-600">
+              <button onClick={() => setSearch("")} className="absolute right-3 text-slate-500 hover:text-slate-600 bg-transparent border-none">
                 <X size={14} />
               </button>
             )}
           </div>
-          <select className={selectClass} value={category} onChange={e => setCategory(e.target.value)}>
-            {["All Categories", ...CATEGORIES].map(c => <option key={c} value={c}>{c}</option>)}
-          </select>
-          <select className={selectClass} value={state} onChange={e => setState(e.target.value)}>
-            {["All States", ...NIGERIAN_STATES].map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <div className="flex gap-2 w-full md:w-auto">
+            <select className={`${selectClass} flex-1 md:rounded-full rounded-lg py-2.5 md:py-3.5`} value={category} onChange={e => setCategory(e.target.value)}>
+              {["All Categories", ...CATEGORIES].map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <select className={`${selectClass} flex-1 md:rounded-full rounded-lg py-2.5 md:py-3.5`} value={state} onChange={e => setState(e.target.value)}>
+              {["All States", ...NIGERIAN_STATES].map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
         </div>
         {(search || category !== "All Categories" || state !== "All States") && (
           <p className="text-[13px] text-slate-500">
