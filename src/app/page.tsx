@@ -198,7 +198,7 @@ export default function HomePage() {
       )}
 
       {/* Hero */}
-      <section className="max-w-3xl mx-auto text-center px-6 pt-6 pb-4 md:pt-20 md:pb-12">
+      <section className="max-w-3xl mx-auto text-center px-6 pt-6 pb-4 md:pt-16 md:pb-6">
         <span className="inline-block bg-green-100 text-green-700 text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full uppercase tracking-wide mb-4">
           Nigeria&apos;s Freelancer Directory — Free to Join
         </span>
@@ -206,12 +206,12 @@ export default function HomePage() {
           Find skilled professionals.<br className="hidden sm:block" />
           <span className="text-green-600">Get hired across Nigeria.</span>
         </h1>
-        <p className="text-base md:text-lg text-slate-500 mb-8 max-w-2xl mx-auto">
+        <p className="text-base md:text-lg text-slate-500 max-w-2xl mx-auto">
           SkillFind connects Nigerian freelancers with clients who need their skills —
           no bidding wars, no commissions, just simple direct contact.
         </p>
         {!user && (
-          <div className="flex items-center justify-center gap-3 flex-wrap">
+          <div className="flex items-center justify-center gap-3 flex-wrap mt-8">
             <button
               onClick={() => router.push("/auth")}
               className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-lg transition cursor-pointer border-none text-xs"
@@ -232,7 +232,7 @@ export default function HomePage() {
 
       {/* Stats bar */}
       <div className="hidden md:block max-w-2xl mx-auto px-6 pb-6">
-        <div className="bg-white border border-gray-200 rounded-xl px-6 py-4 flex items-center justify-center gap-6 flex-wrap shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl px-6 py-4 flex items-center justify-center gap-6 flex-wrap">
           <div className="text-center">
             <p className="font-bricolage text-lg font-bold text-slate-900">{freelancers.length}+</p>
             <p className="text-xs text-slate-500 mt-0.5">Freelancers</p>
