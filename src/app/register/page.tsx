@@ -198,7 +198,15 @@ function RegisterContent() {
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-gray-700">Skill Title</label>
-                <input name="skill" value={form.skill} onChange={handleChange} placeholder="e.g. React Developer" className={errors.skill ? inputError : inputClass} />
+                <input
+                  name="skill"
+                  value={form.skill}
+                  onChange={handleChange}
+                  maxLength={60}
+                  placeholder="e.g. Graphic Designer"
+                  className={errors.skill ? inputError : inputClass}
+                />
+                <p className="text-xs text-slate-400">One short title — save the details for your bio below</p>
                 {errors.skill && <span className="text-xs text-red-500">{errors.skill}</span>}
               </div>
             </div>

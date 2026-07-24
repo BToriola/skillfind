@@ -220,51 +220,40 @@ export default function FreelancerProfileClient({
             <div className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6 flex flex-col items-center text-center gap-3 sm:gap-4 shadow-sm">
 
               {/* Avatar */}
-              <div className="relative inline-block mx-auto mb-1">
-                {freelancer.avatar_url ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={freelancer.avatar_url}
-                    alt={freelancer.name}
-                    className="w-40 h-40 rounded-3xl object-cover ring-4 ring-green-50 shadow-sm"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div
-                    className={`w-40 h-40 rounded-3xl flex items-center justify-center font-bold text-4xl font-bricolage ring-4 ring-green-50 shadow-sm ${CATEGORY_COLORS[freelancer.category] || CATEGORY_COLORS.Other
-                      }`}
-                  >
-                    {getInitials(freelancer.name)}
-                  </div>
-                )}
-                {/* Availability dot */}
-                <span className="absolute bottom-1 right-2 w-6 h-6 bg-green-500 border-4 border-white rounded-full" title="Available for work" />
-              </div>
-
-              {/* Name, skill & availability */}
-              <div className="w-full">
-                <h1 className="font-bricolage text-2xl font-bold text-slate-900 mb-0">
-                  {freelancer.name}
-                </h1>
-                <p className="text-sm font-semibold text-green-600 mb-1.5">
-                  {freelancer.skill}
-                </p>
-
-                {/* Availability badge */}
-                <div className="flex items-center justify-center gap-1.5 mb-4">
-                  <span className="inline-flex items-center gap-1 text-xs font-semibold text-green-700 bg-green-50 border border-green-200 px-3 py-1 rounded-full">
-                    <Zap size={10} className="fill-green-500 text-green-500" />
-                    Available for work
-                  </span>
+              {freelancer.avatar_url ? (
+                <img
+                  src={freelancer.avatar_url}
+                  alt={freelancer.name}
+                  className="w-24 h-24 rounded-2xl object-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div className={`w-24 h-24 rounded-2xl flex items-center justify-center font-bold text-3xl font-bricolage ${
+                  CATEGORY_COLORS[freelancer.category] || CATEGORY_COLORS.Other
+                }`}>
+                  {getInitials(freelancer.name)}
                 </div>
+              )}
 
-                {/* Category + Location */}
-                <div className="flex items-center justify-center gap-4 mt-1">
-                  <span className={`text-xs font-semibold px-3 py-1 rounded-full ${badgeColor}`}>
+              {/* Skill — now the headline */}
+              <div>
+                <h1 className="font-bricolage text-xl font-bold text-slate-900 mb-1">
+                  {freelancer.skill}
+                </h1>
+                <p className="text-sm text-slate-500 flex items-center justify-center gap-1.5 mb-3">
+                  {freelancer.name}
+                  {freelancer.is_verified && (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                      ✓ Verified
+                    </span>
+                  )}
+                </p>
+                <div className="flex items-center justify-center gap-2 flex-wrap">
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${badgeColor}`}>
                     {freelancer.category}
                   </span>
-                  <span className="text-xs font-medium text-slate-500 flex items-center gap-1">
-                    <MapPin size={12} className="text-red-400" />
+                  <span className="text-xs text-slate-400 inline-flex items-center gap-1">
+                    <MapPin size={14} className="text-slate-400" />
                     {freelancer.state}
                   </span>
                 </div>

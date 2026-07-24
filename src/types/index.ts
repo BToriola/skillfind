@@ -13,6 +13,7 @@ export type Freelancer = {
   video_intro: string | null;
   slug: string | null;
   is_approved: boolean;
+  is_verified?: boolean;
   created_at: string;
 };
 

@@ -38,6 +38,7 @@ export default function ProfileModal({ freelancer, onClose }: ProfileModalProps)
   const [showReviewForm, setShowReviewForm] = useState(false);
 
   const { bg, text } = getCategoryColor(freelancer.category);
+  const badgeColor = `${bg} ${text}`;
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -146,12 +147,20 @@ export default function ProfileModal({ freelancer, onClose }: ProfileModalProps)
                 </div>
               )}
               <div className="flex-1">
-                <h2 className="font-[family-name:var(--font-bricolage)] text-xl font-bold text-slate-900">{freelancer.name}</h2>
-                <p className="text-sm font-medium text-green-600 mb-2">{freelancer.skill}</p>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${bg} ${text}`}>{freelancer.category}</span>
-                  <span className="text-xs text-slate-500 flex items-center gap-1">
-                    <MapPin size={12} className="text-red-500" /> {freelancer.state}
+                <h2 className="font-bricolage font-bold text-lg text-slate-900">{freelancer.skill}</h2>
+                <p className="text-sm text-slate-500 flex items-center gap-1.5 mt-0.5">
+                  {freelancer.name}
+                  {freelancer.is_verified && (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                      ✓ Verified
+                    </span>
+                  )}
+                </p>
+                <div className="flex items-center gap-2 flex-wrap mt-2">
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${badgeColor}`}>{freelancer.category}</span>
+                  <span className="text-xs text-slate-400 flex items-center gap-1">
+                    <MapPin size={13} className="text-slate-400" />
+                    {freelancer.state}
                   </span>
                   {avgRating && (
                     <span className="text-xs font-semibold text-yellow-500 flex items-center gap-1">

@@ -252,7 +252,16 @@ export default function ProfilePage() {
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-gray-700">Skill Title</label>
-              <input name="skill" value={form.skill} onChange={handleChange} className={inputClass} required />
+              <input
+                name="skill"
+                value={form.skill}
+                onChange={handleChange}
+                maxLength={60}
+                placeholder="e.g. Graphic Designer"
+                className={inputClass}
+                required
+              />
+              <p className="text-xs text-slate-400">One short title — save the details for your bio below</p>
             </div>
           </div>
 

@@ -320,7 +320,7 @@ export default function HomePage() {
           </div>
         ) : (
           <motion.div
-            className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
             initial="hidden"
             animate="visible"
             variants={{
@@ -335,11 +335,11 @@ export default function HomePage() {
             {filtered.map(f => (
               <motion.div
                 key={f.id}
+                className="h-full"
                 variants={{
                   hidden: { opacity: 0, y: 24 },
                   visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
                 }}
-                className="h-full"
               >
                 <FreelancerCard freelancer={f} onClick={() => setSelected(f)} />
               </motion.div>
