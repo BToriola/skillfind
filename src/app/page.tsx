@@ -9,7 +9,7 @@ import { Freelancer } from "@/types";
 import { CATEGORIES, NIGERIAN_STATES } from "@/constants";
 import FreelancerCard from "@/components/FreelancerCard";
 import ProfileModal from "@/components/ProfileModal";
-import { Search, LogOut, Plus, X, Globe, MessageCircle, Menu } from "lucide-react";
+import { Search, LogOut, Plus, X, Globe, MessageCircle, Menu, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function HomePage() {
@@ -25,6 +25,14 @@ export default function HomePage() {
   const [hasProfile, setHasProfile] = useState(false);
   const [showProfileNudge, setShowProfileNudge] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    function onScroll() { setScrolled(window.scrollY > 8); }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     getFreelancers().then((data) => {
@@ -39,22 +47,34 @@ export default function HomePage() {
     }
   }, [user]);
 
-  const filtered = freelancers.filter(f => {
-    const matchSearch =
-      f.name.toLowerCase().includes(search.toLowerCase()) ||
-      f.skill.toLowerCase().includes(search.toLowerCase());
-    const matchCat = category === "All Categories" || f.category === category;
-    const matchState = state === "All States" || f.state === state;
-    return matchSearch && matchCat && matchState;
-  });
+  // Array.prototype.sort is stable (guaranteed since ES2019), so this only
+  // moves verified freelancers ahead of unverified ones — it doesn't disturb
+  // the newest-first ordering getFreelancers() already applied within each group.
+  const filtered = freelancers
+    .filter(f => {
+      const matchSearch =
+        f.name.toLowerCase().includes(search.toLowerCase()) ||
+        f.skill.toLowerCase().includes(search.toLowerCase()) ||
+        (f.city?.toLowerCase().includes(search.toLowerCase()) ?? false);
+      const matchCat = category === "All Categories" || f.category === category;
+      const matchState = state === "All States" || f.state === state;
+      return matchSearch && matchCat && matchState;
+    })
+    .sort((a, b) => Number(!!b.is_verified) - Number(!!a.is_verified));
 
-  const selectClass = "px-4 py-2.5 text-sm text-slate-700 bg-white border border-slate-200 rounded-full outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/10 transition appearance-none cursor-pointer w-full md:w-auto";
+  // rounded-xl matches the inputClass used by every other text field in the
+  // app (register/profile/auth forms) — a pill (rounded-full) was previously
+  // used only here, an outlier against the rest of the product's shape language.
+  // appearance-none strips the native arrow so it can be styled consistently
+  // across browsers — ChevronDown below replaces it, positioned absolutely
+  // and set pointer-events-none so clicks still reach the select.
+  const selectClass = "pl-4 pr-9 py-2.5 text-sm text-slate-700 bg-white border border-slate-200 rounded-xl outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/10 transition appearance-none cursor-pointer w-full md:w-auto";
 
   return (
     <div className="min-h-screen bg-[#f5f5f0]">
 
       {/* Navbar */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-20">
+      <nav className={`bg-white border-b border-slate-200 sticky top-0 z-20 transition-shadow duration-200 ${scrolled ? "shadow-md" : ""}`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="w-8 h-8 bg-green-700 text-white font-extrabold text-base rounded-lg flex items-center justify-center">S</span>
@@ -197,18 +217,25 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Hero */}
-      <section className="max-w-3xl mx-auto text-center px-6 pt-6 pb-4 md:pt-16 md:pb-6">
+      {/* Hero — max-w-6xl matches the nav/filters/grid below so the page's
+          outer edges stay constant while scrolling; the paragraph keeps its
+          own narrower max-w-2xl for readability. */}
+      <section className="max-w-6xl mx-auto text-center px-6 pt-6 pb-4 md:pt-16 md:pb-6">
         <span className="inline-block bg-green-100 text-green-700 text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full uppercase tracking-wide mb-4">
           Nigeria&apos;s Freelancer Directory — Free to Join
         </span>
+        {/* Line 1 speaks to clients searching (now genuinely local, since
+            freelancers can list a City/Area) — line 2 speaks to freelancers
+            deciding whether to join (broad reach, across the country). Two
+            different audiences, kept as two lines on purpose. */}
         <h1 className="font-bricolage text-3xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight tracking-tight mb-4">
-          Find skilled professionals.<br className="hidden sm:block" />
+          Find skilled professionals near you.<br className="hidden sm:block" />
           <span className="text-green-600">Get hired across Nigeria.</span>
         </h1>
         <p className="text-base md:text-lg text-slate-500 max-w-2xl mx-auto">
           SkillFind connects Nigerian freelancers with clients who need their skills —
-          no bidding wars, no commissions, just simple direct contact.
+          search by name, skill or area to find someone near you, with no bidding
+          wars and no commissions, ever.
         </p>
         {!user && (
           <div className="flex items-center justify-center gap-3 flex-wrap mt-8">
@@ -230,27 +257,32 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Stats bar */}
-      <div className="hidden md:block max-w-2xl mx-auto px-6 pb-6">
-        <div className="bg-white border border-gray-200 rounded-xl px-6 py-4 flex items-center justify-center gap-6 flex-wrap">
-          <div className="text-center">
-            <p className="font-bricolage text-lg font-bold text-slate-900">{freelancers.length}+</p>
-            <p className="text-xs text-slate-500 mt-0.5">Freelancers</p>
+      {/* Stats bar — was `hidden md:block`, so this trust signal never
+          appeared on mobile at all. Each stat used to be two stacked lines
+          (a big number, then a label) inside a 2-col grid, which used roughly
+          4x the vertical space it needed on a phone. Collapsed each stat to
+          one inline unit ("13+ Freelancers") in a single wrapping row instead
+          — always a pill, since it's now short enough to rarely need two
+          lines even on a narrow phone. Outer wrapper matches the
+          hero/filters/grid max-w-6xl; the pill itself stays cozy at max-w-2xl
+          so it doesn't stretch edge-to-edge on wide screens. */}
+      <div className="max-w-6xl mx-auto px-6 pb-6">
+        <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-xl px-5 py-2.5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <span className="font-bricolage text-sm font-bold text-slate-900">{freelancers.length}+</span>
+            <span className="text-xs text-slate-500">Freelancers</span>
           </div>
-          <div className="w-px h-6 bg-gray-200" />
-          <div className="text-center">
-            <p className="font-bricolage text-lg font-bold text-slate-900">36</p>
-            <p className="text-xs text-slate-500 mt-0.5">States</p>
+          <div className="flex items-center gap-1.5">
+            <span className="font-bricolage text-sm font-bold text-slate-900">36</span>
+            <span className="text-xs text-slate-500">States</span>
           </div>
-          <div className="w-px h-6 bg-gray-200" />
-          <div className="text-center">
-            <p className="font-bricolage text-lg font-bold text-slate-900">Free</p>
-            <p className="text-xs text-slate-500 mt-0.5">No Commissions</p>
+          <div className="flex items-center gap-1.5">
+            <span className="font-bricolage text-sm font-bold text-slate-900">Free</span>
+            <span className="text-xs text-slate-500">No Commissions</span>
           </div>
-          <div className="w-px h-6 bg-gray-200" />
-          <div className="text-center">
-            <MessageCircle className="text-slate-900 mx-auto" size={20} />
-            <p className="text-xs text-slate-500 mt-0.5">Direct Chat</p>
+          <div className="flex items-center gap-1.5">
+            <MessageCircle className="text-slate-900" size={14} />
+            <span className="text-xs text-slate-500">Direct Chat</span>
           </div>
         </div>
       </div>
@@ -261,38 +293,65 @@ export default function HomePage() {
           <div className="relative flex items-center flex-1 min-w-60">
             <Search className="absolute left-3 text-slate-500" size={16} />
             <input
-              className="w-full pl-9 pr-9 py-2.5 md:py-3.5 text-sm text-slate-900 bg-white border border-slate-200 rounded-lg md:rounded-full outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-slate-300 transition"
-              placeholder="Search by name or skill..."
+              className="w-full pl-9 pr-9 py-2.5 md:py-3.5 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-slate-300 transition"
+              placeholder="Search by name, skill or area..."
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
-            {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 text-slate-500 hover:text-slate-600 bg-transparent border-none">
-                <X size={14} />
-              </button>
-            )}
+            <AnimatePresence>
+              {search && (
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  transition={{ duration: 0.15 }}
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 text-slate-500 hover:text-slate-600 bg-transparent border-none"
+                >
+                  <X size={14} />
+                </motion.button>
+              )}
+            </AnimatePresence>
           </div>
           <div className="flex gap-2 w-full md:w-auto">
-            <select className={`${selectClass} flex-1 md:rounded-full rounded-lg py-2.5 md:py-3.5`} value={category} onChange={e => setCategory(e.target.value)}>
-              {["All Categories", ...CATEGORIES].map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select className={`${selectClass} flex-1 md:rounded-full rounded-lg py-2.5 md:py-3.5`} value={state} onChange={e => setState(e.target.value)}>
-              {["All States", ...NIGERIAN_STATES].map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
+            <div className="relative flex-1">
+              <select className={`${selectClass} w-full py-2.5 md:py-3.5`} value={category} onChange={e => setCategory(e.target.value)}>
+                {["All Categories", ...CATEGORIES].map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+            </div>
+            <div className="relative flex-1">
+              <select className={`${selectClass} w-full py-2.5 md:py-3.5`} value={state} onChange={e => setState(e.target.value)}>
+                {["All States", ...NIGERIAN_STATES].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+            </div>
           </div>
         </div>
-        {(search || category !== "All Categories" || state !== "All States") && (
-          <p className="text-[13px] text-slate-500">
-            {filtered.length} freelancer{filtered.length !== 1 ? "s" : ""} found
-          </p>
-        )}
+        <AnimatePresence>
+          {(search || category !== "All Categories" || state !== "All States") && (
+            <motion.p
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="text-[13px] text-slate-500 overflow-hidden"
+            >
+              {filtered.length} freelancer{filtered.length !== 1 ? "s" : ""} found
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Grid */}
       <main className="max-w-6xl mx-auto px-6 pb-16">
         {loadingFreelancers ? (
-          // Skeleton loader
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-5">
+          // Skeleton loader — column breakpoints must match the real grid
+          // below (grid-cols-1 sm:grid-cols-2 lg:grid-cols-3). This used to
+          // be auto-fill/minmax, which produced a different column count on
+          // wide screens, so the whole grid visibly reflowed the instant
+          // loading skeletons were replaced by cards.
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col gap-3 animate-pulse">
                 <div className="flex items-center justify-between mb-1">
@@ -311,15 +370,21 @@ export default function HomePage() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="text-center py-20"
+          >
             <div className="flex justify-center mb-4">
               <Search size={48} className="text-slate-200" />
             </div>
             <h3 className="font-bold text-xl text-slate-900 mb-2">No freelancers found</h3>
             <p className="text-sm text-slate-500">Try adjusting your search or filters</p>
-          </div>
+          </motion.div>
         ) : (
           <motion.div
+            layout
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
             initial="hidden"
             animate="visible"
@@ -327,23 +392,30 @@ export default function HomePage() {
               hidden: {},
               visible: {
                 transition: {
-                  staggerChildren: 0.07,
+                  staggerChildren: 0.05,
                 },
               },
             }}
           >
-            {filtered.map(f => (
-              <motion.div
-                key={f.id}
-                className="h-full"
-                variants={{
-                  hidden: { opacity: 0, y: 24 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-                }}
-              >
-                <FreelancerCard freelancer={f} onClick={() => setSelected(f)} />
-              </motion.div>
-            ))}
+            {/* popLayout removes an exiting card from the grid immediately so the
+                remaining cards can reflow into its space, rather than sitting in
+                an empty gap until the fade-out finishes. */}
+            <AnimatePresence mode="popLayout">
+              {filtered.map(f => (
+                <motion.div
+                  key={f.id}
+                  layout
+                  className="h-full"
+                  variants={{
+                    hidden: { opacity: 0, y: 24 },
+                    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
+                  }}
+                  exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }}
+                >
+                  <FreelancerCard freelancer={f} onClick={() => setSelected(f)} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </motion.div>
         )}
       </main>

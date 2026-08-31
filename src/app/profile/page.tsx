@@ -11,7 +11,8 @@ import AIBioGenerator from "@/components/AIBioGenerator";
 import AIPriceSuggester from "@/components/AIPriceSuggester";
 import PortfolioSection from "@/components/PortfolioSection";
 import VerificationSection from "@/components/VerificationSection";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { getInitials, getCategoryColor } from "@/utils/helpers";
 
@@ -36,7 +37,7 @@ export default function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [form, setForm] = useState({
-    name: "", skill: "", category: "", state: "",
+    name: "", skill: "", category: "", state: "", city: "",
     bio: "", rate: "", whatsapp: "", portfolio: "",
     video_intro: "",
   });
@@ -53,7 +54,7 @@ export default function ProfilePage() {
         setAvatarUrl(profile.avatar_url);
         setForm({
           name: profile.name, skill: profile.skill,
-          category: profile.category, state: profile.state,
+          category: profile.category, state: profile.state, city: profile.city || "",
           bio: profile.bio, rate: profile.rate,
           whatsapp: profile.whatsapp, portfolio: profile.portfolio || "",
           video_intro: profile.video_intro || "",
@@ -274,13 +275,29 @@ export default function ProfilePage() {
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">
-                State <span className="text-gray-400 font-normal">(Optional)</span>
-              </label>
-              <select name="state" value={form.state} onChange={handleChange} className={inputClass}>
+              <label className="text-sm font-medium text-gray-700">State</label>
+              {/* A blank placeholder option is required for the `required`
+                  attribute below to mean anything — without one, a <select>
+                  is always considered "filled" (defaulting to the first
+                  option), even for a legacy profile with no state set. */}
+              <select name="state" value={form.state} onChange={handleChange} className={inputClass} required>
+                <option value="">Select state</option>
                 {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-700">City / Area</label>
+            <input
+              name="city"
+              value={form.city}
+              onChange={handleChange}
+              placeholder="e.g. Bodija, Ibadan"
+              className={inputClass}
+              required
+            />
+            <p className="text-xs text-slate-400">Helps clients nearby find and choose you first</p>
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -347,7 +364,18 @@ export default function ProfilePage() {
           <div className="flex items-center gap-3 pt-2">
             <button type="submit" disabled={saving}
               className="flex-1 py-3 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold text-sm rounded-xl transition cursor-pointer border-none">
-              {saving ? "Saving..." : "Save Changes →"}
+              {saving ? (
+                <span className="flex items-center justify-center gap-2">
+                  <motion.span
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="inline-block"
+                  >
+                    <Loader2 size={16} />
+                  </motion.span>
+                  Saving...
+                </span>
+              ) : "Save Changes →"}
             </button>
             <button type="button" onClick={() => router.push("/")}
               className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm rounded-xl transition cursor-pointer border-none">
@@ -378,28 +406,50 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-6">
-          <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-xl flex flex-col items-center">
-            <AlertTriangle className="text-red-500 mb-4" size={40} />
-            <h2 className="text-xl font-bold text-slate-900 mb-2">Delete your profile?</h2>
-            <p className="text-sm text-slate-500 mb-6">
-              This will permanently remove your listing. Clients will no longer be able to find you. This cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm rounded-xl transition cursor-pointer border-none">
-                Cancel
-              </button>
-              <button onClick={handleDelete} disabled={deleting}
-                className="flex-1 py-3 bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white font-semibold text-sm rounded-xl transition cursor-pointer border-none">
-                {deleting ? "Deleting..." : "Yes, Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Delete Confirmation Modal — same entrance/exit pattern as ProfileModal
+          elsewhere in the app, which this dialog previously didn't match. */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <motion.div
+              className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDeleteConfirm(false)}
+            />
+            <motion.div
+              className="bg-white rounded-2xl p-8 max-w-sm w-full text-center shadow-xl flex flex-col items-center relative z-10"
+              initial={{ opacity: 0, y: 40, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 40, scale: 0.96 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+            >
+              <AlertTriangle className="text-red-500 mb-4" size={40} />
+              <h2 className="text-xl font-bold text-slate-900 mb-2">Delete your profile?</h2>
+              <p className="text-sm text-slate-500 mb-6">
+                This will permanently remove your listing. Clients will no longer be able to find you. This cannot be undone.
+              </p>
+              <div className="flex gap-3 w-full">
+                <button onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm rounded-xl transition cursor-pointer border-none">
+                  Cancel
+                </button>
+                <button onClick={handleDelete} disabled={deleting}
+                  className="flex-1 py-3 bg-red-500 hover:bg-red-600 disabled:opacity-60 text-white font-semibold text-sm rounded-xl transition cursor-pointer border-none">
+                  {deleting ? "Deleting..." : "Yes, Delete"}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

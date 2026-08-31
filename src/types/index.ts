@@ -5,6 +5,7 @@ export type Freelancer = {
   skill: string;
   category: string;
   state: string;
+  city: string | null;
   bio: string;
   rate: string;
   whatsapp: string;

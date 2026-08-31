@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { saveFreelancer, getUserFreelancerProfile } from "@/utils/storage";
 import { supabase } from "@/utils/supabase";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import AIBioGenerator from "@/components/AIBioGenerator";
 import AIPriceSuggester from "@/components/AIPriceSuggester";
@@ -14,6 +15,26 @@ import { CATEGORIES, NIGERIAN_STATES } from "@/constants";
 
 const inputClass = "w-full px-3.5 py-2.5 text-sm text-slate-900 bg-white border border-gray-200 rounded-xl outline-none focus:border-green-500 focus:ring-3 focus:ring-green-100 placeholder:text-gray-300 transition appearance-none resize-none";
 const inputError = "w-full px-3.5 py-2.5 text-sm text-slate-900 bg-white border border-red-400 rounded-xl outline-none placeholder:text-gray-300 transition appearance-none resize-none";
+
+// Slides the message in/out rather than having it pop the layout instantly —
+// used under every validated field below.
+function FieldError({ message }: { message?: string }) {
+  return (
+    <AnimatePresence>
+      {message && (
+        <motion.span
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={{ duration: 0.15 }}
+          className="text-xs text-red-500 overflow-hidden block"
+        >
+          {message}
+        </motion.span>
+      )}
+    </AnimatePresence>
+  );
+}
 
 function RegisterContent() {
   const router = useRouter();
@@ -25,7 +46,7 @@ function RegisterContent() {
   const [alreadyListed, setAlreadyListed] = useState(false);
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [form, setForm] = useState({
-    name: "", skill: "", category: "", state: "",
+    name: "", skill: "", category: "", state: "", city: "",
     bio: "", rate: "", whatsapp: "", portfolio: "",
   });
   const [errors, setErrors] = useState<Partial<typeof form>>({});
@@ -63,6 +84,8 @@ function RegisterContent() {
     if (!form.name.trim()) e.name = "Required";
     if (!form.skill.trim()) e.skill = "Required";
     if (!form.category) e.category = "Required";
+    if (!form.state) e.state = "Required";
+    if (!form.city.trim()) e.city = "Required";
     if (!form.whatsapp.trim()) e.whatsapp = "Required";
     return e;
   }
@@ -194,7 +217,7 @@ function RegisterContent() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-gray-700">Full Name</label>
                 <input name="name" value={form.name} onChange={handleChange} placeholder="e.g. Chidi Okeke" className={errors.name ? inputError : inputClass} />
-                {errors.name && <span className="text-xs text-red-500">{errors.name}</span>}
+                <FieldError message={errors.name} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-gray-700">Skill Title</label>
@@ -207,7 +230,7 @@ function RegisterContent() {
                   className={errors.skill ? inputError : inputClass}
                 />
                 <p className="text-xs text-slate-400">One short title — save the details for your bio below</p>
-                {errors.skill && <span className="text-xs text-red-500">{errors.skill}</span>}
+                <FieldError message={errors.skill} />
               </div>
             </div>
 
@@ -218,18 +241,29 @@ function RegisterContent() {
                   <option value="">Select category</option>
                   {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
-                {errors.category && <span className="text-xs text-red-500">{errors.category}</span>}
+                <FieldError message={errors.category} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700">
-                  State <span className="text-gray-400 font-normal">(Optional)</span>
-                </label>
+                <label className="text-sm font-medium text-gray-700">State</label>
                 <select name="state" value={form.state} onChange={handleChange} className={errors.state ? inputError : inputClass}>
                   <option value="">Select state</option>
                   {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-                {errors.state && <span className="text-xs text-red-500">{errors.state}</span>}
+                <FieldError message={errors.state} />
               </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-gray-700">City / Area</label>
+              <input
+                name="city"
+                value={form.city}
+                onChange={handleChange}
+                placeholder="e.g. Bodija, Ibadan"
+                className={errors.city ? inputError : inputClass}
+              />
+              <p className="text-xs text-slate-400">Helps clients nearby find and choose you first</p>
+              <FieldError message={errors.city} />
             </div>
 
             <div className="flex flex-col gap-1.5">
@@ -247,7 +281,7 @@ function RegisterContent() {
                 placeholder="Describe your experience and what makes you unique..."
                 className={errors.bio ? inputError : inputClass}
               />
-              {errors.bio && <span className="text-xs text-red-500">{errors.bio}</span>}
+              <FieldError message={errors.bio} />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -265,12 +299,12 @@ function RegisterContent() {
                   placeholder="e.g. ₦5,000/hr or ₦50,000/project"
                   className={errors.rate ? inputError : inputClass}
                 />
-                {errors.rate && <span className="text-xs text-red-500">{errors.rate}</span>}
+                <FieldError message={errors.rate} />
               </div>
               <div className="flex flex-col gap-1.5">
                 <label className="text-sm font-medium text-gray-700">WhatsApp Number</label>
                 <input name="whatsapp" value={form.whatsapp} onChange={handleChange} placeholder="e.g. 08012345678" className={errors.whatsapp ? inputError : inputClass} />
-                {errors.whatsapp && <span className="text-xs text-red-500">{errors.whatsapp}</span>}
+                <FieldError message={errors.whatsapp} />
               </div>
             </div>
 
@@ -285,7 +319,20 @@ function RegisterContent() {
 
             <button type="submit" disabled={saving}
               className="mt-2 w-full py-3.5 bg-green-600 hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl transition cursor-pointer flex items-center justify-center gap-2">
-              {saving ? "Saving..." : <span className="flex items-center gap-2">Create Profile & Join SkillFind <ArrowRight size={18} /></span>}
+              {saving ? (
+                <span className="flex items-center gap-2">
+                  <motion.span
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="inline-block"
+                  >
+                    <Loader2 size={16} />
+                  </motion.span>
+                  Saving...
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">Create Profile & Join SkillFind <ArrowRight size={18} /></span>
+              )}
             </button>
 
             <p className="text-center text-xs text-slate-500">

@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { Freelancer } from "@/types";
-import { getInitials, formatRate, getCategoryColor } from "@/utils/helpers";
+import { getInitials, formatRate, getCategoryColor, formatLocation } from "@/utils/helpers";
 import { motion } from "framer-motion";
 import { MapPin } from "lucide-react";
 
@@ -65,15 +65,20 @@ export default function FreelancerCard({ freelancer, onClick }: { freelancer: Fr
         {hasBio ? freelancer.bio : "No bio added yet"}
       </p>
 
-      {/* Footer — always pinned to bottom, color restored here */}
-      <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100">
-        <span className="text-sm font-bold text-green-600">
+      {/* Footer — always pinned to bottom, color restored here.
+          City/State together can run much longer than a state name alone
+          ("Oluyole Estate. Ibadan, Oyo" vs "Oyo"), and this row never had a
+          width limit on it — it just wrapped to a second line and broke the
+          single-line footer every other card in the grid keeps to. max-w
+          + truncate caps it at roughly half the row and ellipsizes instead. */}
+      <div className="flex items-center justify-between gap-3 pt-3 mt-3 border-t border-slate-100">
+        <span className="text-sm font-bold text-green-600 shrink-0">
           {hasRate ? formatRate(freelancer.rate) : "Rate on request"}
         </span>
         {hasLocation && (
-          <span className="text-xs text-slate-400 flex items-center gap-1">
-            <MapPin size={13} className="text-slate-400" />
-            {freelancer.state}
+          <span className="text-xs text-slate-400 flex items-center gap-1 min-w-0 max-w-[55%]">
+            <MapPin size={13} className="text-slate-400 shrink-0" />
+            <span className="truncate">{formatLocation(freelancer.city, freelancer.state)}</span>
           </span>
         )}
       </div>

@@ -16,6 +16,7 @@ export async function saveFreelancer(freelancer: {
   skill: string;
   category: string;
   state: string;
+  city?: string;
   bio: string;
   rate: string;
   whatsapp: string;
@@ -76,6 +77,10 @@ export async function uploadAvatar(userId: string, file: File): Promise<string |
 
   if (error) { console.error(error); return null; }
 
+  // The object path never changes between uploads (always {userId}/avatar.ext),
+  // so without a cache-buster the public URL is identical every time and
+  // browsers/CDNs keep serving whichever photo they first cached — a new
+  // upload silently never shows up anywhere the old one was already cached.
   const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
-  return data.publicUrl;
+  return `${data.publicUrl}?v=${Date.now()}`;
 }

@@ -4,8 +4,8 @@ import { useState, Suspense, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn, signUp, resetPassword, signInWithGoogle, setUserType } from "@/utils/auth";
 import { supabase } from "@/utils/supabase";
-import { motion } from "framer-motion";
-import { Eye, EyeOff, Wand2, Telescope } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Eye, EyeOff, Wand2, Telescope, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 type Mode = "login" | "signup" | "forgot" | "role";
@@ -125,9 +125,20 @@ function AuthContent() {
           <span>🇳🇬</span>
         </div>
 
-        {/* Role selection screen — shown after successful signup */}
+        {/* Role selection screen — shown after successful signup.
+            AnimatePresence mode="wait" crossfades between this, the reset-sent
+            screen, and the main form — including switches between login/
+            signup/forgot within the form itself, since each is keyed by mode. */}
+        <AnimatePresence mode="wait">
         {mode === "role" ? (
-          <div className="flex flex-col gap-4">
+          <motion.div
+            key="role"
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -12 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col gap-4"
+          >
             <div>
               <h1 className="font-bricolage text-2xl font-bold text-slate-900 mb-1">
                 How will you use SkillFind?
@@ -188,9 +199,16 @@ function AuthContent() {
                 </div>
               </div>
             </motion.button>
-          </div>
+          </motion.div>
         ) : resetSent ? (
-          <div className="text-center">
+          <motion.div
+            key="reset-sent"
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -12 }}
+            transition={{ duration: 0.2 }}
+            className="text-center"
+          >
             <div className="text-5xl mb-4">📧</div>
             <h2 className="font-bricolage text-xl font-bold text-slate-900 mb-2">
               Check your email
@@ -208,9 +226,15 @@ function AuthContent() {
             >
               Back to Sign In
             </button>
-          </div>
+          </motion.div>
         ) : (
-          <>
+          <motion.div
+            key={mode}
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -12 }}
+            transition={{ duration: 0.2 }}
+          >
             <h1 className="font-bricolage text-2xl font-bold text-slate-900 mb-1">
               {mode === "signup" ? "Create your account" : mode === "login" ? "Welcome back" : "Reset your password"}
             </h1>
@@ -338,7 +362,18 @@ function AuthContent() {
                 type="submit" disabled={loading}
                 className="mt-1 w-full py-3 bg-green-600 hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold text-sm rounded-xl transition cursor-pointer"
               >
-                {loading ? "Please wait..." :
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <motion.span
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="inline-block"
+                    >
+                      <Loader2 size={16} />
+                    </motion.span>
+                    Please wait...
+                  </span>
+                ) :
                  mode === "signup" ? "Create Account →" :
                  mode === "login" ? "Sign In →" :
                  "Send Reset Link →"}
@@ -378,8 +413,9 @@ function AuthContent() {
                 </p>
               )}
             </div>
-          </>
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
     </div>
   );

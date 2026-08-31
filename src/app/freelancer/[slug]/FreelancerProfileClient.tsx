@@ -18,7 +18,7 @@ import { supabase } from "@/utils/supabase";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 import PortfolioSection from "@/components/PortfolioSection";
-import { formatRate, formatWhatsApp, getCategoryColor, getInitials, safeExternalUrl } from "@/utils/helpers";
+import { formatRate, formatWhatsApp, getCategoryColor, getInitials, safeExternalUrl, formatLocation } from "@/utils/helpers";
 import StarRating from "@/components/StarRating";
 
 type Review = {
@@ -243,7 +243,7 @@ export default function FreelancerProfileClient({
                   </span>
                   <span className="text-xs text-slate-400 inline-flex items-center gap-1">
                     <MapPin size={14} className="text-slate-400" />
-                    {freelancer.state}
+                    {formatLocation(freelancer.city, freelancer.state)}
                   </span>
                 </div>
               </div>

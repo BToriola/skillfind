@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/utils/supabase";
 import { Freelancer } from "@/types";
-import { getCategoryColor, getInitials, formatWhatsApp, formatRate, safeExternalUrl } from "@/utils/helpers";
+import { getCategoryColor, getInitials, formatWhatsApp, formatRate, safeExternalUrl, formatLocation } from "@/utils/helpers";
 import StarRating from "@/components/StarRating";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, ExternalLink, MessageCircle, Star } from "lucide-react";
@@ -161,7 +161,7 @@ export default function ProfileModal({ freelancer, onClose }: ProfileModalProps)
                   <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${badgeColor}`}>{freelancer.category}</span>
                   <span className="text-xs text-slate-400 flex items-center gap-1">
                     <MapPin size={13} className="text-slate-400" />
-                    {freelancer.state}
+                    {formatLocation(freelancer.city, freelancer.state)}
                   </span>
                   {avgRating && (
                     <span className="text-xs font-semibold text-yellow-500 flex items-center gap-1">

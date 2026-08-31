@@ -19,6 +19,13 @@ export function getCategoryColor(category: string): { bg: string; text: string }
   return map[category] ?? map["Other"];
 }
 
+// "City, State" when a freelancer has set a city/area, otherwise just the
+// state — used everywhere a location is displayed so city and state never
+// drift out of sync between the card, modal, profile page, and SEO metadata.
+export function formatLocation(city: string | null | undefined, state: string) {
+  return city?.trim() ? `${city.trim()}, ${state}` : state;
+}
+
 export function getInitials(name: string) {
   return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
 }

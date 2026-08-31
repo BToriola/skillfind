@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { formatLocation } from "@/utils/helpers";
 import FreelancerProfileClient from "./FreelancerProfileClient";
 
 const supabase = createClient(
@@ -35,19 +36,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Freelancer Not Found | SkillFind" };
   }
 
+  // A city-level location ("in Bodija, Ibadan" vs. just "in Oyo") is more
+  // specific than what most competing listings can offer, which is the
+  // actual SEO edge of going hyperlocal — worth it here, not just on-page.
+  const location = formatLocation(freelancer.city, freelancer.state);
+
   return {
-    title: `${freelancer.name} — ${freelancer.skill} in ${freelancer.state} | SkillFind`,
+    title: `${freelancer.name} — ${freelancer.skill} in ${location} | SkillFind`,
     description: freelancer.bio,
     openGraph: {
       title: `${freelancer.name} | SkillFind 🇳🇬`,
-      description: `${freelancer.skill} based in ${freelancer.state}, Nigeria. ${freelancer.bio}`,
+      description: `${freelancer.skill} based in ${location}, Nigeria. ${freelancer.bio}`,
       images: freelancer.avatar_url ? [freelancer.avatar_url] : [],
       type: "profile",
     },
     twitter: {
       card: "summary_large_image",
       title: `${freelancer.name} | SkillFind 🇳🇬`,
-      description: `${freelancer.skill} in ${freelancer.state}, Nigeria`,
+      description: `${freelancer.skill} in ${location}, Nigeria`,
     },
   };
 }
