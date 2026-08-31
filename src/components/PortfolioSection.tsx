@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Briefcase, ImagePlus } from "lucide-react";
 import { supabase } from "@/utils/supabase";
+import { safeExternalUrl } from "@/utils/helpers";
 import { PortfolioItem } from "@/types";
 
 type Props = {
@@ -20,6 +21,10 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
   const [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  // Tracks the live blob URL so it can be revoked without going through
+  // state, which would otherwise leak one URL per image the user picks.
+  const previewUrlRef = useRef<string | null>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -43,8 +48,25 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
     fetchItems();
   }, [fetchItems]);
 
-  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  // Single owner of the preview blob URL: revokes the old one before
+  // creating the next, and clears both pieces of state together.
+  const setPreview = useCallback((file: File | null) => {
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+      previewUrlRef.current = null;
+    }
+    if (file) previewUrlRef.current = URL.createObjectURL(file);
+    setSelectedImage(file);
+    setImagePreview(previewUrlRef.current);
+  }, []);
+
+  useEffect(() => () => {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+  }, []);
+
+  // Shared by the file picker and the drop zone so both enforce the
+  // same type and size rules.
+  const acceptFile = useCallback((file: File | undefined | null) => {
     if (!file) return;
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       setError("Only JPG, PNG or WebP images allowed");
@@ -54,9 +76,35 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
       setError("Image must be under 3MB");
       return;
     }
-    setSelectedImage(file);
-    setImagePreview(URL.createObjectURL(file));
+    setPreview(file);
     setError("");
+  }, [setPreview]);
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    acceptFile(e.target.files?.[0]);
+    // Reset so picking the same file again after removing it still fires onChange.
+    e.target.value = "";
+  }
+
+  // dragover must preventDefault or the drop event never fires and the
+  // browser navigates away to the dropped file instead.
+  function handleDragOver(e: React.DragEvent) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    if (!isDragging) setIsDragging(true);
+  }
+
+  function handleDragLeave(e: React.DragEvent) {
+    // Moving between the zone's own children fires dragleave too, so only
+    // clear the highlight once the pointer has actually left the zone.
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setIsDragging(false);
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault();
+    setIsDragging(false);
+    acceptFile(e.dataTransfer.files?.[0]);
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -113,8 +161,7 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
     }
 
     setForm({ title: "", description: "", project_url: "", tools_used: "" });
-    setSelectedImage(null);
-    setImagePreview(null);
+    setPreview(null);
     setShowForm(false);
     setSaving(false);
     await fetchItems();
@@ -183,17 +230,36 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
                     />
                     <button
                       type="button"
-                      onClick={() => { setSelectedImage(null); setImagePreview(null); }}
+                      onClick={() => setPreview(null)}
                       className="absolute top-2 right-2 w-7 h-7 bg-white rounded-lg shadow flex items-center justify-center text-slate-500 hover:text-red-500 text-xs cursor-pointer border-none"
                     >
                       ✕
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed border-gray-200 rounded-xl cursor-pointer hover:border-green-300 hover:bg-green-50 transition">
-                    <ImagePlus className="text-slate-300 mb-1" size={28} />
-                    <span className="text-xs text-slate-400">Click to upload image</span>
-                    <span className="text-xs text-slate-300 mt-0.5">JPG, PNG or WebP · Max 3MB</span>
+                  <label
+                    onDragEnter={handleDragOver}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-xl cursor-pointer transition ${
+                      isDragging
+                        ? "border-green-500 bg-green-50"
+                        : "border-gray-200 hover:border-green-300 hover:bg-green-50"
+                    }`}
+                  >
+                    {/* Children ignore pointer events so dragging across them
+                        doesn't thrash the dragenter/dragleave pair. */}
+                    <div className="flex flex-col items-center pointer-events-none">
+                      <ImagePlus
+                        className={`mb-1 transition-colors ${isDragging ? "text-green-500" : "text-slate-300"}`}
+                        size={28}
+                      />
+                      <span className={`text-xs ${isDragging ? "text-green-600 font-medium" : "text-slate-400"}`}>
+                        {isDragging ? "Drop your image here" : "Click to upload or drag an image here"}
+                      </span>
+                      <span className="text-xs text-slate-300 mt-0.5">JPG, PNG or WebP · Max 3MB</span>
+                    </div>
                     <input
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
@@ -343,9 +409,9 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
 
                 {item.tools_used && (
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {item.tools_used.split(",").map(tool => (
+                    {item.tools_used.split(",").map((tool, i) => (
                       <span
-                        key={tool}
+                        key={`${tool.trim()}-${i}`}
                         className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full"
                       >
                         {tool.trim()}
@@ -354,9 +420,9 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
                   </div>
                 )}
 
-                {item.project_url && (
+                {safeExternalUrl(item.project_url) && (
                   <a
-                    href={item.project_url}
+                    href={safeExternalUrl(item.project_url)!}
                     target="_blank"
                     rel="noreferrer"
                     className="text-xs font-medium text-green-600 hover:underline mt-1"

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { saveFreelancer, getUserFreelancerProfile } from "@/utils/storage";
 import { supabase } from "@/utils/supabase";
-import { CheckCircle, ArrowRight, User, ArrowLeft } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 import AIBioGenerator from "@/components/AIBioGenerator";
 import AIPriceSuggester from "@/components/AIPriceSuggester";
@@ -180,7 +180,7 @@ function RegisterContent() {
               <span className="text-2xl">🎉</span>
               <div>
                 <p className="text-sm font-semibold text-green-800 mb-0.5">
-                  You're 1 step away from getting discovered!
+                  You&apos;re 1 step away from getting discovered!
                 </p>
                 <p className="text-sm text-green-700">
                   Fill in your details below — it takes about 2 minutes. Once done, clients across Nigeria can find and contact you instantly.

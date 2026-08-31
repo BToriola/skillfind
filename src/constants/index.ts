@@ -1,6 +1,24 @@
+// "Other" stays last — it's the fallback option in every category dropdown.
+// Adding here is enough: getCategoryColor() gives the badge its colour and
+// the smart-search prompt builds its list from this array.
 export const CATEGORIES = [
+  // Creative / digital
   "Technology", "Design", "Writing", "Marketing",
-  "Trades", "Photography", "Education", "Other",
+  "Video & Animation", "Photography", "Fashion",
+  // Hands-on / local services
+  "Trades", "Home Services",
+  // Professional
+  "Business & Consulting", "Education",
+  "Other",
+];
+
+// Accepted proof of identity. Must stay in step with the
+// verification_id_type_valid CHECK constraint in 002_verification.sql.
+export const ID_TYPES = [
+  "NIN Slip",
+  "Driver's License",
+  "Voter's Card",
+  "International Passport",
 ];
 
 export const NIGERIAN_STATES = [

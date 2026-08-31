@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/utils/supabase";
 import { Freelancer } from "@/types";
-import { getCategoryColor, getInitials, formatWhatsApp, formatRate } from "@/utils/helpers";
+import { getCategoryColor, getInitials, formatWhatsApp, formatRate, safeExternalUrl } from "@/utils/helpers";
 import StarRating from "@/components/StarRating";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, ExternalLink, MessageCircle, Star } from "lucide-react";
@@ -39,6 +39,7 @@ export default function ProfileModal({ freelancer, onClose }: ProfileModalProps)
 
   const { bg, text } = getCategoryColor(freelancer.category);
   const badgeColor = `${bg} ${text}`;
+  const portfolioUrl = safeExternalUrl(freelancer.portfolio);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -182,13 +183,13 @@ export default function ProfileModal({ freelancer, onClose }: ProfileModalProps)
             {/* Info row */}
             <div className="flex gap-3">
               <div className="flex-1 bg-slate-50 rounded-xl p-4">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Ratejj</p>
+                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Rate</p>
                 <p className="text-sm font-bold text-slate-900">{formatRate(freelancer.rate)}</p>
               </div>
-              {freelancer.portfolio && (
+              {portfolioUrl && (
                 <div className="flex-1 bg-slate-50 rounded-xl p-4">
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Portfolio</p>
-                  <a href={freelancer.portfolio} target="_blank" rel="noreferrer" className="text-sm font-medium text-green-600 hover:underline flex items-center gap-1">
+                  <a href={portfolioUrl} target="_blank" rel="noreferrer" className="text-sm font-medium text-green-600 hover:underline flex items-center gap-1">
                     View work <ExternalLink size={14} />
                   </a>
                 </div>
@@ -271,9 +272,9 @@ export default function ProfileModal({ freelancer, onClose }: ProfileModalProps)
                     <div key={review.id} className="border border-slate-100 rounded-xl p-4">
                       <div className="flex items-center justify-between mb-2">
                         <div>
-                          <p className="text-xs font-semibold text-slate-700">
-                            {review.profiles?.email?.split("@")[0] || "User"}
-                          </p>
+                          {/* Reviewers stay anonymous — showing the email
+                              local-part here exposed their address publicly. */}
+                          <p className="text-xs font-semibold text-slate-700">Verified Client</p>
                           <StarRating rating={review.rating} readonly />
                         </div>
                         <span className="text-xs text-slate-500">

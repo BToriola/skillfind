@@ -85,7 +85,7 @@ export default function AIBioGenerator({ name, skill, state, onGenerated }: Prop
                 <Sparkles className="text-purple-600" size={20} />
                 <div>
                   <p className="text-sm font-semibold text-purple-800">AI Bio Generator</p>
-                  <p className="text-xs text-purple-500">Answer 2 quick questions and Claude will write your bio</p>
+                  <p className="text-xs text-purple-500">Answer 2 quick questions and AI will write your bio</p>
                 </div>
               </div>
 

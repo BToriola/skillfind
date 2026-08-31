@@ -60,7 +60,7 @@ function AuthContent() {
     }
 
     if (mode === "signup") {
-      const { data, error } = await signUp(email, password, fullName, businessName);
+      const { error } = await signUp(email, password, fullName, businessName);
       if (error) { toast.error(error.message); setLoading(false); return; }
 
       // After signup, ask the user what role they are

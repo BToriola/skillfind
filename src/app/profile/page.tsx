@@ -10,6 +10,7 @@ import Image from "next/image";
 import AIBioGenerator from "@/components/AIBioGenerator";
 import AIPriceSuggester from "@/components/AIPriceSuggester";
 import PortfolioSection from "@/components/PortfolioSection";
+import VerificationSection from "@/components/VerificationSection";
 import { AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 import { getInitials, getCategoryColor } from "@/utils/helpers";
@@ -354,6 +355,17 @@ export default function ProfilePage() {
             </button>
           </div>
         </form>
+
+        {/* Verification */}
+        {freelancer && user && (
+          <div className="mt-6">
+            <VerificationSection
+              freelancerId={freelancer.id}
+              userId={user.id}
+              isVerified={!!freelancer.is_verified}
+            />
+          </div>
+        )}
 
         {/* Portfolio Section */}
         {freelancer && (

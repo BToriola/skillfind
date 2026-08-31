@@ -12,14 +12,13 @@ import {
   Check,
   Share2,
   MapPin,
-  Zap,
 } from "lucide-react";
 import { Freelancer } from "@/types";
 import { supabase } from "@/utils/supabase";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 import PortfolioSection from "@/components/PortfolioSection";
-import { formatRate, formatWhatsApp } from "@/utils/helpers";
+import { formatRate, formatWhatsApp, getCategoryColor, getInitials, safeExternalUrl } from "@/utils/helpers";
 import StarRating from "@/components/StarRating";
 
 type Review = {
@@ -30,23 +29,6 @@ type Review = {
   created_at: string;
   profiles: { email: string };
 };
-
-const CATEGORY_COLORS: Record<string, string> = {
-  Technology: "bg-blue-100 text-blue-700",
-  Design: "bg-pink-100 text-pink-700",
-  Writing: "bg-yellow-100 text-yellow-700",
-  Marketing: "bg-orange-100 text-orange-700",
-  Trades: "bg-green-100 text-green-700",
-  Photography: "bg-purple-100 text-purple-700",
-  Education: "bg-cyan-100 text-cyan-700",
-  Other: "bg-slate-100 text-slate-600",
-};
-
-function getInitials(name: string) {
-  return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
-}
-
-
 
 function BioText({ bio }: { bio: string }) {
   const [expanded, setExpanded] = useState(false);
@@ -68,12 +50,17 @@ function BioText({ bio }: { bio: string }) {
   );
 }
 
-function SkillChips({ skill }: { skill: string }) {
-  const chips = skill
+// A single-word skill produces one chip that just repeats the headline, so
+// callers check the count and skip the whole section rather than rendering
+// a "Core Skills" heading with nothing under it.
+function splitSkills(skill: string) {
+  return skill
     .split(/[,/]/)
     .map(s => s.trim())
     .filter(Boolean);
-  if (chips.length <= 1 && chips[0] === skill.trim()) return null;
+}
+
+function SkillChips({ chips }: { chips: string[] }) {
   return (
     <div className="flex flex-wrap gap-1.5 mt-3">
       {chips.map(chip => (
@@ -104,9 +91,13 @@ export default function FreelancerProfileClient({
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const badgeColor = CATEGORY_COLORS[freelancer.category] || CATEGORY_COLORS.Other;
+  const { bg, text } = getCategoryColor(freelancer.category);
+  const badgeColor = `${bg} ${text}`;
   const isOwnProfile = user?.id === freelancer.user_id;
   const canReview = user && !isOwnProfile && !userReview;
+  const skillChips = splitSkills(freelancer.skill);
+  const portfolioUrl = safeExternalUrl(freelancer.portfolio);
+  const videoUrl = safeExternalUrl(freelancer.video_intro);
 
   const avgRating = reviews.length
     ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
@@ -228,9 +219,7 @@ export default function FreelancerProfileClient({
                   loading="lazy"
                 />
               ) : (
-                <div className={`w-24 h-24 rounded-2xl flex items-center justify-center font-bold text-3xl font-bricolage ${
-                  CATEGORY_COLORS[freelancer.category] || CATEGORY_COLORS.Other
-                }`}>
+                <div className={`w-24 h-24 rounded-2xl flex items-center justify-center font-bold text-3xl font-bricolage ${badgeColor}`}>
                   {getInitials(freelancer.name)}
                 </div>
               )}
@@ -298,9 +287,9 @@ export default function FreelancerProfileClient({
 
               {/* Secondary links */}
               <div className="w-full flex flex-col gap-2 mt-1">
-                {freelancer.portfolio && (
+                {portfolioUrl && (
                   <a
-                    href={freelancer.portfolio}
+                    href={portfolioUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center justify-center gap-2 w-full h-[52px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[15px] rounded-xl transition"
@@ -308,9 +297,9 @@ export default function FreelancerProfileClient({
                     <ExternalLink size={16} /> View Portfolio
                   </a>
                 )}
-                {freelancer.video_intro && (
+                {videoUrl && (
                   <a
-                    href={freelancer.video_intro}
+                    href={videoUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center justify-center gap-2 w-full h-[52px] bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-[15px] rounded-xl transition"
@@ -345,7 +334,7 @@ export default function FreelancerProfileClient({
             </motion.div>
 
             {/* Skills */}
-            {freelancer.skill && (
+            {skillChips.length > 1 && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -353,7 +342,7 @@ export default function FreelancerProfileClient({
                 className="bg-white rounded-2xl border border-gray-200 p-6"
               >
                 <h2 className="font-bricolage font-bold text-slate-900 mb-3">Core Skills</h2>
-                <SkillChips skill={freelancer.skill} />
+                <SkillChips chips={skillChips} />
               </motion.div>
             )}
 

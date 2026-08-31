@@ -9,7 +9,7 @@ import { Freelancer } from "@/types";
 import { CATEGORIES, NIGERIAN_STATES } from "@/constants";
 import FreelancerCard from "@/components/FreelancerCard";
 import ProfileModal from "@/components/ProfileModal";
-import { Search, LogOut, Plus, User, CheckCircle, X, Globe, MessageCircle, Menu } from "lucide-react";
+import { Search, LogOut, Plus, X, Globe, MessageCircle, Menu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function HomePage() {

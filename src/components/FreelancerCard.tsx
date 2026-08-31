@@ -1,36 +1,15 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { Freelancer } from "@/types";
-import { getInitials, formatRate } from "@/utils/helpers";
+import { getInitials, formatRate, getCategoryColor } from "@/utils/helpers";
 import { motion } from "framer-motion";
 import { MapPin } from "lucide-react";
 
-const CATEGORY_COLORS: Record<string, string> = {
-  Technology: "bg-blue-100 text-blue-700",
-  Design: "bg-pink-100 text-pink-700",
-  Writing: "bg-yellow-100 text-yellow-700",
-  Marketing: "bg-orange-100 text-orange-700",
-  Trades: "bg-green-100 text-green-700",
-  Photography: "bg-purple-100 text-purple-700",
-  Education: "bg-cyan-100 text-cyan-700",
-  Other: "bg-slate-100 text-slate-600",
-};
-
-const AVATAR_COLORS: Record<string, string> = {
-  Technology: "bg-blue-100 text-blue-700",
-  Design: "bg-pink-100 text-pink-700",
-  Writing: "bg-yellow-100 text-yellow-700",
-  Marketing: "bg-orange-100 text-orange-700",
-  Trades: "bg-green-100 text-green-700",
-  Photography: "bg-purple-100 text-purple-700",
-  Education: "bg-cyan-100 text-cyan-700",
-  Other: "bg-slate-100 text-slate-600",
-};
-
 export default function FreelancerCard({ freelancer, onClick }: { freelancer: Freelancer; onClick: () => void }) {
   const router = useRouter();
-  const avatarColor = AVATAR_COLORS[freelancer.category] || AVATAR_COLORS.Other;
-  const badgeColor = CATEGORY_COLORS[freelancer.category] || CATEGORY_COLORS.Other;
+  const { bg, text } = getCategoryColor(freelancer.category);
+  const avatarColor = `${bg} ${text}`;
+  const badgeColor = avatarColor;
 
   function handleClick() {
     if (freelancer.slug) {
