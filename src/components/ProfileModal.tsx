@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/utils/supabase";
 import { Freelancer } from "@/types";
-import { getCategoryColor, getInitials, formatWhatsApp, formatRate, safeExternalUrl, formatLocation } from "@/utils/helpers";
+import { getCategoryColor, getInitials, formatWhatsApp, formatPricing, safeExternalUrl, formatLocation } from "@/utils/helpers";
 import StarRating from "@/components/StarRating";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, MapPin, ExternalLink, MessageCircle, Star } from "lucide-react";
@@ -184,7 +184,7 @@ export default function ProfileModal({ freelancer, onClose }: ProfileModalProps)
             <div className="flex gap-3">
               <div className="flex-1 bg-slate-50 rounded-xl p-4">
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Rate</p>
-                <p className="text-sm font-bold text-slate-900">{formatRate(freelancer.rate)}</p>
+                <p className="text-sm font-bold text-slate-900">{formatPricing(freelancer.rate_type, freelancer.rate_min, freelancer.rate_max, freelancer.rate)}</p>
               </div>
               {portfolioUrl && (
                 <div className="flex-1 bg-slate-50 rounded-xl p-4">

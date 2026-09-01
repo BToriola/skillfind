@@ -1,3 +1,5 @@
+export type RateType = "hourly" | "daily" | "project" | "item" | "negotiable";
+
 export type Freelancer = {
   id: string;
   user_id: string;
@@ -7,7 +9,13 @@ export type Freelancer = {
   state: string;
   city: string | null;
   bio: string;
+  /** @deprecated Legacy free-text rate. Only read when rate_type is null
+   *  (a row that predates 005_backfill_pricing.sql). New writes set the
+   *  three structured fields below instead. */
   rate: string;
+  rate_type: RateType | null;
+  rate_min: number | null;
+  rate_max: number | null;
   whatsapp: string;
   portfolio: string;
   avatar_url: string | null;

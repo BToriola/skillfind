@@ -18,7 +18,7 @@ import { supabase } from "@/utils/supabase";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 import PortfolioSection from "@/components/PortfolioSection";
-import { formatRate, formatWhatsApp, getCategoryColor, getInitials, safeExternalUrl, formatLocation } from "@/utils/helpers";
+import { formatPricing, formatWhatsApp, getCategoryColor, getInitials, safeExternalUrl, formatLocation } from "@/utils/helpers";
 import StarRating from "@/components/StarRating";
 
 type Review = {
@@ -268,7 +268,7 @@ export default function FreelancerProfileClient({
               <div className="w-full mt-2 mb-3 bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-xl px-4 py-2.5 text-center">
                 <p className="text-xs text-green-600 font-semibold mb-0.5 uppercase tracking-wide">Rate</p>
                 <p className="font-bricolage font-black text-green-800 text-3xl leading-tight">
-                  {formatRate(freelancer.rate)}
+                  {formatPricing(freelancer.rate_type, freelancer.rate_min, freelancer.rate_max, freelancer.rate)}
                 </p>
               </div>
 

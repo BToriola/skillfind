@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { Freelancer } from "@/types";
-import { getInitials, formatRate, getCategoryColor, formatLocation } from "@/utils/helpers";
+import { getInitials, formatPricing, getCategoryColor, formatLocation } from "@/utils/helpers";
 import { motion } from "framer-motion";
 import { MapPin } from "lucide-react";
 
@@ -20,7 +20,6 @@ export default function FreelancerCard({ freelancer, onClick }: { freelancer: Fr
   }
 
   const hasLocation = !!freelancer.state?.trim();
-  const hasRate = !!freelancer.rate?.trim();
   const hasBio = !!freelancer.bio?.trim();
 
   return (
@@ -73,7 +72,7 @@ export default function FreelancerCard({ freelancer, onClick }: { freelancer: Fr
           + truncate caps it at roughly half the row and ellipsizes instead. */}
       <div className="flex items-center justify-between gap-3 pt-3 mt-3 border-t border-slate-100">
         <span className="text-sm font-bold text-green-600 shrink-0">
-          {hasRate ? formatRate(freelancer.rate) : "Rate on request"}
+          {formatPricing(freelancer.rate_type, freelancer.rate_min, freelancer.rate_max, freelancer.rate)}
         </span>
         {hasLocation && (
           <span className="text-xs text-slate-400 flex items-center gap-1 min-w-0 max-w-[55%]">

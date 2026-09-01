@@ -10,11 +10,12 @@ import Image from "next/image";
 import AIBioGenerator from "@/components/AIBioGenerator";
 import AIPriceSuggester from "@/components/AIPriceSuggester";
 import PortfolioSection from "@/components/PortfolioSection";
+import PricingFields from "@/components/PricingFields";
 import VerificationSection from "@/components/VerificationSection";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
-import { getInitials, getCategoryColor } from "@/utils/helpers";
+import { getInitials, getCategoryColor, toPricingPayload } from "@/utils/helpers";
 
 import { CATEGORIES, NIGERIAN_STATES } from "@/constants";
 
@@ -38,7 +39,7 @@ export default function ProfilePage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "", skill: "", category: "", state: "", city: "",
-    bio: "", rate: "", whatsapp: "", portfolio: "",
+    bio: "", rate_type: "", rate_min: "", rate_max: "", whatsapp: "", portfolio: "",
     video_intro: "",
   });
 
@@ -55,7 +56,10 @@ export default function ProfilePage() {
         setForm({
           name: profile.name, skill: profile.skill,
           category: profile.category, state: profile.state, city: profile.city || "",
-          bio: profile.bio, rate: profile.rate,
+          bio: profile.bio,
+          rate_type: profile.rate_type || "",
+          rate_min: profile.rate_min != null ? String(profile.rate_min) : "",
+          rate_max: profile.rate_max != null ? String(profile.rate_max) : "",
           whatsapp: profile.whatsapp, portfolio: profile.portfolio || "",
           video_intro: profile.video_intro || "",
         });
@@ -110,9 +114,10 @@ export default function ProfilePage() {
     if (!freelancer) return;
     setSaving(true);
 
+    const { rate_type, rate_min, rate_max, ...rest } = form;
     const { error } = await supabase
       .from("freelancers")
-      .update({ ...form })
+      .update({ ...rest, ...toPricingPayload({ rate_type, rate_min, rate_max }) })
       .eq("id", freelancer.id);
 
     setSaving(false);
@@ -316,26 +321,23 @@ export default function ProfilePage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <AIPriceSuggester
-                skill={form.skill}
-                category={form.category}
-                state={form.state}
-                onApply={(rate) => setForm({ ...form, rate })}
-              />
-              <input
-                name="rate"
-                value={form.rate}
-                onChange={handleChange}
-                placeholder="e.g. ₦5,000/hr or ₦50,000/project"
-                className={inputClass}
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-700">WhatsApp Number</label>
-              <input name="whatsapp" value={form.whatsapp} onChange={handleChange} className={inputClass} required />
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <AIPriceSuggester
+              skill={form.skill}
+              category={form.category}
+              state={form.state}
+              onApply={(pricing) => setForm({ ...form, ...pricing })}
+            />
+            <PricingFields
+              value={{ rate_type: form.rate_type, rate_min: form.rate_min, rate_max: form.rate_max }}
+              onChange={(next) => setForm({ ...form, ...next })}
+              inputClass={inputClass}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-gray-700">WhatsApp Number</label>
+            <input name="whatsapp" value={form.whatsapp} onChange={handleChange} className={inputClass} required />
           </div>
 
           <div className="flex flex-col gap-1.5">

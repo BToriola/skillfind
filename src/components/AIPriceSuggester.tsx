@@ -4,13 +4,26 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lightbulb, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { PricingValue } from "@/components/PricingFields";
 
 type Props = {
   skill: string;
   category: string;
   state: string;
-  onApply: (rate: string) => void;
+  onApply: (pricing: PricingValue) => void;
 };
+
+// The route's prompt (src/app/api/suggest-price/route.ts) asks for exactly
+// these two labeled lines. Pulling numbers out of each separately — rather
+// than always grabbing the hourly one — is what stops the suggester from
+// nudging every freelancer toward an hourly rate regardless of what they do.
+function parseAmounts(line: string | undefined): { min: string; max: string } | null {
+  if (!line) return null;
+  const nums = line.match(/[\d,]+/g)?.map(n => parseInt(n.replace(/,/g, ""), 10)) ?? [];
+  if (nums.length === 0) return null;
+  const max = nums.length > 1 && nums[1] > nums[0] ? nums[1] : null;
+  return { min: String(nums[0]), max: max != null ? String(max) : "" };
+}
 
 export default function AIPriceSuggester({ skill, category, state, onApply }: Props) {
   const [open, setOpen] = useState(false);
@@ -48,10 +61,9 @@ export default function AIPriceSuggester({ skill, category, state, onApply }: Pr
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-1.5">
-        <label className="text-sm font-medium text-gray-700">
-          Rate (₦) <span className="text-gray-400 font-normal">(Optional)</span>
-        </label>
+      {/* No label here — PricingFields renders "How do you charge?" right
+          below this button, and a second label above it just duplicated it. */}
+      <div className="flex items-center justify-end mb-1.5">
         <motion.button
           type="button"
           whileHover={{ scale: 1.03 }}
@@ -109,32 +121,45 @@ export default function AIPriceSuggester({ skill, category, state, onApply }: Pr
                   >
                     <p className="text-xs font-semibold text-blue-700 mb-2 flex items-center gap-1"><Lightbulb size={14} /> Suggested Rate</p>
                     <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">{suggestion}</p>
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.97 }}
-                      onClick={() => {
-                        // Extract just the hourly line and clean it up
-                        const lines = suggestion.split("\n").filter(l => l.trim());
-                        const hourlyLine = lines.find(l => l.toLowerCase().includes("hourly"));
-                        
-                        if (hourlyLine) {
-                          // Remove "Hourly:" prefix, keep just the rate value
-                          const cleaned = hourlyLine
-                            .replace(/hourly:/i, "")
-                            .trim();
-                          onApply(cleaned);
-                        } else {
-                          onApply(lines[0]);
-                        }
-                        
-                        setOpen(false);
-                        setSuggestion("");
-                      }}
-                      className="mt-3 w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl transition cursor-pointer border-none"
-                    >
-                      Use This Rate →
-                    </motion.button>
+                    {(() => {
+                      const lines = suggestion.split("\n").filter(l => l.trim());
+                      const hourly = parseAmounts(lines.find(l => /hourly/i.test(l)));
+                      const project = parseAmounts(lines.find(l => /per\s*project/i.test(l)));
+                      return (
+                        <div className="mt-3 flex gap-2">
+                          {hourly && (
+                            <motion.button
+                              type="button"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => {
+                                onApply({ rate_type: "hourly", rate_min: hourly.min, rate_max: hourly.max });
+                                setOpen(false);
+                                setSuggestion("");
+                              }}
+                              className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-xl transition cursor-pointer border-none"
+                            >
+                              Use Hourly →
+                            </motion.button>
+                          )}
+                          {project && (
+                            <motion.button
+                              type="button"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.97 }}
+                              onClick={() => {
+                                onApply({ rate_type: "project", rate_min: project.min, rate_max: project.max });
+                                setOpen(false);
+                                setSuggestion("");
+                              }}
+                              className="flex-1 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 font-semibold text-xs rounded-xl transition cursor-pointer border-none"
+                            >
+                              Use Per-Project →
+                            </motion.button>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </motion.div>
                 )}
               </AnimatePresence>

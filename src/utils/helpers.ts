@@ -1,3 +1,6 @@
+import { RATE_TYPES } from "@/constants";
+import { RateType } from "@/types";
+
 export function getCategoryColor(category: string): { bg: string; text: string } {
   const map: Record<string, { bg: string; text: string }> = {
     // Keep these class names as full literal strings — Tailwind's scanner
@@ -58,6 +61,71 @@ export function formatWhatsApp(number: string) {
   const cleaned = number.replace(/\D/g, "");
   const international = cleaned.startsWith("0") ? "234" + cleaned.slice(1) : cleaned;
   return `https://wa.me/${international}`;
+}
+
+/**
+ * Reads a Naira amount out of whatever a user typed — "50,000", "₦50000",
+ * "50 000" all give 50000. Returns null for anything with no digits.
+ */
+export function parseNairaAmount(value: string): number | null {
+  const digits = value.replace(/\D/g, "");
+  return digits ? parseInt(digits, 10) : null;
+}
+
+/**
+ * Converts the pricing form's string fields into the numeric/null shape the
+ * DB columns expect. Both forms must go through this — writing the raw form
+ * strings would send "15,000" to a numeric column, and would let a
+ * negotiable row keep amounts, which freelancers_rate_coherent rejects.
+ */
+export function toPricingPayload(v: {
+  rate_type: string;
+  rate_min: string;
+  rate_max: string;
+}): { rate_type: RateType | null; rate_min: number | null; rate_max: number | null } {
+  if (!v.rate_type) return { rate_type: null, rate_min: null, rate_max: null };
+  if (v.rate_type === "negotiable") {
+    return { rate_type: "negotiable", rate_min: null, rate_max: null };
+  }
+
+  const min = parseNairaAmount(v.rate_min);
+  // A priced type with no amount would violate the DB check, so treat an
+  // incomplete entry as "no pricing set" rather than writing a broken row.
+  if (min == null) return { rate_type: null, rate_min: null, rate_max: null };
+
+  const max = parseNairaAmount(v.rate_max);
+  return {
+    rate_type: v.rate_type as RateType,
+    rate_min: min,
+    rate_max: max != null && max > min ? max : null,
+  };
+}
+
+/**
+ * Renders the structured pricing fields for display.
+ *
+ * Falls back to the legacy free-text `rate` whenever rate_type is null,
+ * so rows that predate 005_backfill_pricing.sql keep rendering exactly as
+ * they did instead of silently going blank.
+ */
+export function formatPricing(
+  rateType: RateType | null | undefined,
+  rateMin: number | null | undefined,
+  rateMax: number | null | undefined,
+  legacyRate?: string | null
+): string {
+  if (!rateType) {
+    return legacyRate?.trim() ? formatRate(legacyRate) : "Rate on request";
+  }
+  if (rateType === "negotiable") return "Negotiable";
+  if (rateMin == null) return "Rate on request";
+
+  const suffix = RATE_TYPES.find(t => t.value === rateType)?.suffix ?? "";
+  const lo = `₦${rateMin.toLocaleString("en-NG")}`;
+  const hi = rateMax != null && rateMax > rateMin
+    ? ` – ₦${rateMax.toLocaleString("en-NG")}`
+    : "";
+  return `${lo}${hi}${suffix}`;
 }
 
 export function formatRate(rate: string) {

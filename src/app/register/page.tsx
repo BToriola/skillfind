@@ -10,8 +10,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import AIBioGenerator from "@/components/AIBioGenerator";
 import AIPriceSuggester from "@/components/AIPriceSuggester";
+import PricingFields from "@/components/PricingFields";
 
 import { CATEGORIES, NIGERIAN_STATES } from "@/constants";
+import { parseNairaAmount, toPricingPayload } from "@/utils/helpers";
 
 const inputClass = "w-full px-3.5 py-2.5 text-sm text-slate-900 bg-white border border-gray-200 rounded-xl outline-none focus:border-green-500 focus:ring-3 focus:ring-green-100 placeholder:text-gray-300 transition appearance-none resize-none";
 const inputError = "w-full px-3.5 py-2.5 text-sm text-slate-900 bg-white border border-red-400 rounded-xl outline-none placeholder:text-gray-300 transition appearance-none resize-none";
@@ -47,7 +49,7 @@ function RegisterContent() {
   const [checkingProfile, setCheckingProfile] = useState(true);
   const [form, setForm] = useState({
     name: "", skill: "", category: "", state: "", city: "",
-    bio: "", rate: "", whatsapp: "", portfolio: "",
+    bio: "", rate_type: "", rate_min: "", rate_max: "", whatsapp: "", portfolio: "",
   });
   const [errors, setErrors] = useState<Partial<typeof form>>({});
 
@@ -87,6 +89,14 @@ function RegisterContent() {
     if (!form.state) e.state = "Required";
     if (!form.city.trim()) e.city = "Required";
     if (!form.whatsapp.trim()) e.whatsapp = "Required";
+    // A priced type with no amount would be rejected by the DB's
+    // freelancers_rate_coherent check, so catch it here with a real message.
+    if (form.rate_type && form.rate_type !== "negotiable") {
+      const min = parseNairaAmount(form.rate_min);
+      const max = parseNairaAmount(form.rate_max);
+      if (min == null) e.rate_min = "Enter an amount, or choose Negotiable";
+      else if (max != null && max <= min) e.rate_min = "\u201cTo\u201d must be higher than \u201cFrom\u201d";
+    }
     return e;
   }
 
@@ -103,7 +113,12 @@ function RegisterContent() {
 
     setSaving(true);
 
-    const result = await saveFreelancer({ ...form, user_id: user.id });
+    const { rate_type, rate_min, rate_max, ...rest } = form;
+    const result = await saveFreelancer({
+      ...rest,
+      ...toPricingPayload({ rate_type, rate_min, rate_max }),
+      user_id: user.id,
+    });
 
     if (!result) {
       toast.error("Something went wrong. Please try again.");
@@ -284,28 +299,25 @@ function RegisterContent() {
               <FieldError message={errors.bio} />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <AIPriceSuggester
-                  skill={form.skill}
-                  category={form.category}
-                  state={form.state}
-                  onApply={(rate) => setForm({ ...form, rate })}
-                />
-                <input
-                  name="rate"
-                  value={form.rate}
-                  onChange={handleChange}
-                  placeholder="e.g. ₦5,000/hr or ₦50,000/project"
-                  className={errors.rate ? inputError : inputClass}
-                />
-                <FieldError message={errors.rate} />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium text-gray-700">WhatsApp Number</label>
-                <input name="whatsapp" value={form.whatsapp} onChange={handleChange} placeholder="e.g. 08012345678" className={errors.whatsapp ? inputError : inputClass} />
-                <FieldError message={errors.whatsapp} />
-              </div>
+            <div className="flex flex-col gap-1.5">
+              <AIPriceSuggester
+                skill={form.skill}
+                category={form.category}
+                state={form.state}
+                onApply={(pricing) => setForm({ ...form, ...pricing })}
+              />
+              <PricingFields
+                value={{ rate_type: form.rate_type, rate_min: form.rate_min, rate_max: form.rate_max }}
+                onChange={(next) => setForm({ ...form, ...next })}
+                inputClass={inputClass}
+                error={errors.rate_min}
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-gray-700">WhatsApp Number</label>
+              <input name="whatsapp" value={form.whatsapp} onChange={handleChange} placeholder="e.g. 08012345678" className={errors.whatsapp ? inputError : inputClass} />
+              <FieldError message={errors.whatsapp} />
             </div>
 
             <div className="flex flex-col gap-1.5">

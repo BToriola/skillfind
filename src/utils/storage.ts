@@ -18,7 +18,9 @@ export async function saveFreelancer(freelancer: {
   state: string;
   city?: string;
   bio: string;
-  rate: string;
+  rate_type: string | null;
+  rate_min: number | null;
+  rate_max: number | null;
   whatsapp: string;
   portfolio: string;
   video_intro?: string;
@@ -28,9 +30,13 @@ export async function saveFreelancer(freelancer: {
   const tempId = crypto.randomUUID();
   const slug = generateSlug(freelancer.name, tempId);
 
+  // Callers no longer send the legacy `rate` column — pricing now lives in
+  // rate_type/rate_min/rate_max. Whether `rate` is NOT NULL at the DB level
+  // wasn't possible to confirm from here, so this guarantees a value is
+  // always sent regardless, rather than risking an insert failure on it.
   const { data, error } = await supabase
     .from("freelancers")
-    .insert([{ ...freelancer, id: tempId, slug }])
+    .insert([{ rate: "", ...freelancer, id: tempId, slug }])
     .select()
     .single();
 
