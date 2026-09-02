@@ -39,6 +39,13 @@ export const metadata: Metadata = {
     title: "SkillFind 🇳🇬 — Nigeria's Freelancer Directory",
     description: "Find skilled Nigerian freelancers by skill, category, and state.",
   },
+  // Google Search Console domain-ownership token (HTML tag method) —
+  // renders as <meta name="google-site-verification" content="..." />.
+  // Removing this after verification would un-verify the property, so it
+  // stays here permanently, not just for the initial check.
+  verification: {
+    google: "tqbQfMBAtS66WfheLgDVjEttlkZioO8E_xFQMRimLMw",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
