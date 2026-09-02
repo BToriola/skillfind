@@ -27,6 +27,20 @@ const getFreelancer = cache(async (slug: string) => {
   return data;
 });
 
+// Google's structured-data guidelines prohibit an aggregateRating with no
+// real reviews behind it — so this only ever returns a value when count > 0,
+// and the JSON-LD below omits the field entirely otherwise.
+const getRatingSummary = cache(async (freelancerId: string) => {
+  const { data } = await supabase
+    .from("reviews")
+    .select("rating")
+    .eq("freelancer_id", freelancerId);
+
+  if (!data || data.length === 0) return null;
+  const avg = data.reduce((sum, r) => sum + r.rating, 0) / data.length;
+  return { average: avg, count: data.length };
+});
+
 // Generate metadata for SEO
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -47,7 +61,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: `${freelancer.name} | SkillFind 🇳🇬`,
       description: `${freelancer.skill} based in ${location}, Nigeria. ${freelancer.bio}`,
-      images: freelancer.avatar_url ? [freelancer.avatar_url] : [],
+      images: freelancer.avatar_url
+        ? [{ url: freelancer.avatar_url, alt: `${freelancer.name} — ${freelancer.skill}` }]
+        : [],
       type: "profile",
     },
     twitter: {
@@ -64,5 +80,46 @@ export default async function FreelancerPage({ params }: Props) {
 
   if (!freelancer) notFound();
 
-  return <FreelancerProfileClient freelancer={freelancer} />;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const rating = await getRatingSummary(freelancer.id);
+
+  // LocalBusiness (rather than Person) is what Google's rich results
+  // actually support with star ratings in search — the closer fit for a
+  // directory whose whole pitch is "a local service provider," which most
+  // of these listings are (plumbers, tailors, designers), even where the
+  // freelancer is technically a sole individual rather than a company.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: freelancer.name,
+    description: freelancer.bio,
+    url: `${siteUrl}/freelancer/${freelancer.slug}`,
+    ...(freelancer.avatar_url ? { image: freelancer.avatar_url } : {}),
+    address: {
+      "@type": "PostalAddress",
+      ...(freelancer.city ? { addressLocality: freelancer.city } : {}),
+      addressRegion: freelancer.state,
+      addressCountry: "NG",
+    },
+    ...(rating
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: rating.average.toFixed(1),
+            reviewCount: rating.count,
+          },
+        }
+      : {}),
+  };
+
+  return (
+    <>
+      {/* Static JSON built above, not user-supplied HTML. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <FreelancerProfileClient freelancer={freelancer} />
+    </>
+  );
 }

@@ -16,9 +16,29 @@ const dmSans = DM_Sans({
   weight: ["400", "500", "700"],
 });
 
+// metadataBase resolves any relative OG/twitter image path against the real
+// domain instead of Next guessing — without it, Next logs a warning and
+// falls back to localhost, which is exactly wrong for a shared social preview.
+// NEXT_PUBLIC_SITE_URL must be set to the real production domain wherever
+// this is deployed, or every shared link's preview silently points at
+// localhost — check this before going live.
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "SkillFind 🇳🇬 — Nigeria's Freelancer Directory",
   description: "Find skilled Nigerian freelancers by skill, category, and state.",
+  openGraph: {
+    title: "SkillFind 🇳🇬 — Nigeria's Freelancer Directory",
+    description: "Find skilled Nigerian freelancers by skill, category, and state.",
+    type: "website",
+    locale: "en_NG",
+  },
+  twitter: {
+    card: "summary",
+    title: "SkillFind 🇳🇬 — Nigeria's Freelancer Directory",
+    description: "Find skilled Nigerian freelancers by skill, category, and state.",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

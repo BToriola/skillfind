@@ -12,7 +12,7 @@ import AIPriceSuggester from "@/components/AIPriceSuggester";
 import PortfolioSection from "@/components/PortfolioSection";
 import PricingFields from "@/components/PricingFields";
 import VerificationSection from "@/components/VerificationSection";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { AlertTriangle, Loader2, Link2, Copy, Check, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import { getInitials, getCategoryColor, toPricingPayload } from "@/utils/helpers";
@@ -35,6 +35,7 @@ export default function ProfilePage() {
   const [deleting, setDeleting] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [form, setForm] = useState({
@@ -146,6 +147,20 @@ export default function ProfilePage() {
   const avatarColor = getCategoryColor(form.category);
   const avatarClass = `${avatarColor.bg} ${avatarColor.text}`;
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+    || (typeof window !== "undefined" ? window.location.origin : "");
+  const profileUrl = freelancer?.slug ? `${siteUrl}/freelancer/${freelancer.slug}` : "";
+  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(
+    `I'm ${form.name || "on"} SkillFind — ${form.skill || "check out my profile"}. See my work and contact me here: ${profileUrl}`
+  )}`;
+
+  function handleCopyProfileLink() {
+    if (!profileUrl) return;
+    navigator.clipboard.writeText(profileUrl);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  }
+
   if (loading || loadingProfile) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -185,7 +200,41 @@ export default function ProfilePage() {
           </button>
         </div>
 
-
+        {/* Share link — this is the actual pitch: a page you can send a
+            client instead of the Share button, which only ever lived on
+            the public-facing view visitors see, never here. */}
+        {profileUrl && (
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-2xl p-5 sm:p-6 mb-6">
+            <p className="text-sm font-semibold text-green-800 mb-1 flex items-center gap-1.5">
+              <Link2 size={16} /> Your public profile link
+            </p>
+            <p className="text-xs text-green-700 mb-3">
+              Send this to any client — no app to download, they see your work instantly.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex-1 min-w-0 bg-white border border-green-200 rounded-xl px-3.5 py-2.5 text-sm text-slate-700 truncate">
+                {profileUrl}
+              </div>
+              <div className="flex gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleCopyProfileLink}
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white border border-green-200 hover:border-green-300 text-green-700 font-semibold text-sm rounded-xl transition cursor-pointer"
+                >
+                  {linkCopied ? <><Check size={16} /> Copied!</> : <><Copy size={16} /> Copy</>}
+                </button>
+                <a
+                  href={whatsappShareUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-semibold text-sm rounded-xl transition"
+                >
+                  <MessageCircle size={16} /> Share on WhatsApp
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Photo Upload Card */}
         <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 flex items-center gap-6">
