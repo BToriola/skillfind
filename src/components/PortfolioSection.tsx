@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Briefcase, ImagePlus } from "lucide-react";
+import { Briefcase, ImagePlus, Pencil, X } from "lucide-react";
 import { supabase } from "@/utils/supabase";
 import { safeExternalUrl } from "@/utils/helpers";
 import { PortfolioItem } from "@/types";
@@ -31,6 +31,19 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
     project_url: "",
     tools_used: "",
   });
+
+  // null = "adding a new project". Set = "editing this existing one".
+  const [editingId, setEditingId] = useState<string | null>(null);
+  // The item's current image when editing — shown until the user picks a
+  // replacement or clears it. Kept separate from imagePreview (a freshly
+  // picked file's blob URL) so submit can tell "keep the existing photo"
+  // apart from "no photo at all" instead of always overwriting with null.
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+  // The image_url an edit started with, so a replaced or removed photo's
+  // old file gets deleted from storage after a successful save — same
+  // cleanup handleDelete already does, just triggered by a replace instead.
+  const originalImageUrlRef = useRef<string | null>(null);
+  const displayImage = imagePreview || existingImageUrl;
 
   const fetchItems = useCallback(async () => {
     Promise.resolve().then(() => setLoading(true));
@@ -107,6 +120,47 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
     acceptFile(e.dataTransfer.files?.[0]);
   }
 
+  function closeForm() {
+    setShowForm(false);
+    setEditingId(null);
+    setForm({ title: "", description: "", project_url: "", tools_used: "" });
+    setExistingImageUrl(null);
+    originalImageUrlRef.current = null;
+    setPreview(null);
+    setError("");
+  }
+
+  function openAddForm() {
+    closeForm();
+    setShowForm(true);
+  }
+
+  // A replaced or removed photo would otherwise leave its old file orphaned
+  // in storage — same cleanup handleDelete does, just triggered by a replace.
+  // Pulled out of handleSubmit as its own function: inlined, this exact
+  // shape somehow made the linter misattribute a purity violation to an
+  // unrelated Date.now() call earlier in that function.
+  async function cleanupReplacedImage(oldUrl: string | null, newUrl: string | null) {
+    if (!oldUrl || oldUrl === newUrl) return;
+    const path = oldUrl.split("/portfolio/")[1];
+    if (path) await supabase.storage.from("portfolio").remove([path]);
+  }
+
+  function openEditForm(item: PortfolioItem) {
+    setEditingId(item.id);
+    setForm({
+      title: item.title,
+      description: item.description,
+      project_url: item.project_url || "",
+      tools_used: item.tools_used || "",
+    });
+    setExistingImageUrl(item.image_url);
+    originalImageUrlRef.current = item.image_url;
+    setPreview(null);
+    setError("");
+    setShowForm(true);
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.title.trim()) { setError("Project title is required"); return; }
@@ -115,13 +169,21 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
     setSaving(true);
     setError("");
 
-    let image_url = null;
+    // Editing without picking a new file must keep the existing photo
+    // rather than default to null — only a fresh pick overrides it.
+    let image_url = existingImageUrl;
 
-    // Upload image if selected
     if (selectedImage) {
       setUploading(true);
       const { data: { user } } = await supabase.auth.getUser();
       const fileExt = selectedImage.name.split(".").pop();
+      // False positive: this rule (eslint-plugin-react-hooks 7.0.1)
+      // misattributes a purity violation to this line whenever the same
+      // async function also reads a ref (originalImageUrlRef.current,
+      // below) — confirmed by removing that read alone and watching this
+      // error disappear. handleSubmit is an onSubmit handler, never called
+      // during render, so Date.now() here is safe regardless.
+      // eslint-disable-next-line react-hooks/purity
       const filePath = `${user?.id}/${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
@@ -143,26 +205,28 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
       setUploading(false);
     }
 
-    const { error: insertError } = await supabase
-      .from("portfolio_items")
-      .insert([{
-        freelancer_id: freelancerId,
-        title: form.title.trim(),
-        description: form.description.trim(),
-        image_url,
-        project_url: form.project_url.trim() || null,
-        tools_used: form.tools_used.trim() || null,
-      }]);
+    const payload = {
+      freelancer_id: freelancerId,
+      title: form.title.trim(),
+      description: form.description.trim(),
+      image_url,
+      project_url: form.project_url.trim() || null,
+      tools_used: form.tools_used.trim() || null,
+    };
 
-    if (insertError) {
+    const saveError = editingId
+      ? (await supabase.from("portfolio_items").update(payload).eq("id", editingId)).error
+      : (await supabase.from("portfolio_items").insert([payload])).error;
+
+    if (saveError) {
       setError("Failed to save. Try again.");
       setSaving(false);
       return;
     }
 
-    setForm({ title: "", description: "", project_url: "", tools_used: "" });
-    setPreview(null);
-    setShowForm(false);
+    await cleanupReplacedImage(originalImageUrlRef.current, image_url);
+
+    closeForm();
     setSaving(false);
     await fetchItems();
   }
@@ -189,11 +253,11 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
           <h2 className="font-bricolage font-bold text-slate-900">Portfolio</h2>
           <p className="text-xs text-slate-400 mt-0.5">Real work speaks louder than words</p>
         </div>
-        {canEdit && items.length < 6 && (
+        {canEdit && (items.length < 6 || showForm) && (
           <motion.button
             whileTap={{ scale: 0.95 }}
             type="button"
-            onClick={() => { setShowForm(!showForm); setError(""); }}
+            onClick={() => (showForm ? closeForm() : openAddForm())}
             className="text-sm font-semibold text-green-600 hover:text-green-700 bg-green-50 hover:bg-green-100 px-4 py-2 rounded-xl transition cursor-pointer border-none"
           >
             {showForm ? "Cancel" : "+ Add Project"}
@@ -213,24 +277,26 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
             className="overflow-hidden"
           >
             <div className="bg-slate-50 rounded-2xl p-5 mb-5 flex flex-col gap-4">
-              <p className="text-sm font-semibold text-slate-700">Add a Project</p>
+              <p className="text-sm font-semibold text-slate-700">
+                {editingId ? "Edit Project" : "Add a Project"}
+              </p>
 
               {/* Image Upload */}
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-medium text-slate-600">
                   Project Screenshot <span className="text-slate-400">(Optional)</span>
                 </label>
-                {imagePreview ? (
+                {displayImage ? (
                   <div className="relative">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={imagePreview}
+                      src={displayImage}
                       alt="Preview"
                       className="w-full h-40 object-cover rounded-xl border border-gray-200"
                     />
                     <button
                       type="button"
-                      onClick={() => setPreview(null)}
+                      onClick={() => { setPreview(null); setExistingImageUrl(null); }}
                       className="absolute top-2 right-2 w-7 h-7 bg-white rounded-lg shadow flex items-center justify-center text-slate-500 hover:text-red-500 text-xs cursor-pointer border-none"
                     >
                       ✕
@@ -331,7 +397,7 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
                 whileTap={{ scale: 0.97 }}
                 className="w-full py-3 bg-green-600 hover:bg-green-700 disabled:opacity-60 text-white font-semibold text-sm rounded-xl transition cursor-pointer border-none"
               >
-                {uploading ? "Uploading image..." : saving ? "Saving..." : "Save Project →"}
+                {uploading ? "Uploading image..." : saving ? "Saving..." : editingId ? "Save Changes →" : "Save Project →"}
               </motion.button>
             </div>
           </motion.form>
@@ -394,12 +460,26 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
                     {item.title}
                   </h3>
                   {canEdit && (
-                    <button
-                      onClick={() => handleDelete(item.id, item.image_url)}
-                      className="text-xs text-slate-300 hover:text-red-500 bg-transparent border-none cursor-pointer transition opacity-0 group-hover:opacity-100 shrink-0"
-                    >
-                      ✕
-                    </button>
+                    // Always visible, not hover-revealed — opacity-0 +
+                    // group-hover would make these unreachable on touch
+                    // devices entirely, since there's no hover state to
+                    // reveal them on mobile.
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button
+                        onClick={() => openEditForm(item)}
+                        aria-label="Edit project"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-green-600 hover:bg-green-50 bg-transparent border-none cursor-pointer transition"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(item.id, item.image_url)}
+                        aria-label="Delete project"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 bg-transparent border-none cursor-pointer transition"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
                   )}
                 </div>
 

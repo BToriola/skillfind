@@ -15,6 +15,7 @@ export function getCategoryColor(category: string): { bg: string; text: string }
     Fashion: { bg: "bg-rose-100", text: "text-rose-700" },
     Trades: { bg: "bg-green-100", text: "text-green-700" },
     "Home Services": { bg: "bg-teal-100", text: "text-teal-700" },
+    "Logistics & Delivery": { bg: "bg-sky-100", text: "text-sky-700" },
     "Business & Consulting": { bg: "bg-amber-100", text: "text-amber-700" },
     Education: { bg: "bg-cyan-100", text: "text-cyan-700" },
     Other: { bg: "bg-slate-100", text: "text-slate-600" },

@@ -6,7 +6,7 @@ export const CATEGORIES = [
   "Technology", "Design", "Writing", "Marketing",
   "Video & Animation", "Photography", "Fashion",
   // Hands-on / local services
-  "Trades", "Home Services",
+  "Trades", "Home Services", "Logistics & Delivery",
   // Professional
   "Business & Consulting", "Education",
   "Other",
