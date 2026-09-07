@@ -8,8 +8,9 @@ export async function POST(req: NextRequest) {
     || req.headers.get("x-real-ip")
     || "unknown";
 
-  // Allow max 5 requests per 10 minutes per IP
+  // Allow max 5 requests per 10 minutes per IP, on this route's own budget
   const limit = rateLimit(ip, {
+    scope: "generate-bio",
     maxRequests: 5,
     windowMs: 10 * 60 * 1000,
   });

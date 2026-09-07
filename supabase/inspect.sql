@@ -103,6 +103,17 @@ where r.reviewer_id = f.user_id;
 select freelancer_id, count(*) from public.portfolio_items
 group by freelancer_id having count(*) > 6;
 
+-- portfolio_count drift — freelancers.portfolio_count disagreeing with the
+-- real number of portfolio_items. Should always return zero rows: the
+-- sync_portfolio_count trigger (006) recomputes on every insert, update and
+-- delete. Any row here means the trigger is missing or was disabled, and
+-- re-running 006 repairs it.
+select f.id, f.name, f.portfolio_count as stored, count(p.id) as actual
+from public.freelancers f
+left join public.portfolio_items p on p.freelancer_id = f.id
+group by f.id, f.name, f.portfolio_count
+having f.portfolio_count <> count(p.id);
+
 -- Auth users missing a profiles row (the signUp update silently fails
 -- under RLS when email confirmation is on and there's no session yet)
 select u.id, u.email, u.created_at

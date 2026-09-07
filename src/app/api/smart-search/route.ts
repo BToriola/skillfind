@@ -8,8 +8,11 @@ export async function POST(req: NextRequest) {
     || req.headers.get("x-real-ip")
     || "unknown";
 
-  // Allow max 20 requests per 10 minutes for search (more generous)
+  // Allow max 20 requests per 10 minutes for search (more generous). Its own
+  // budget now — searching is the highest-volume route, so sharing a pool meant
+  // it starved the two one-off writers on the register and profile forms.
   const limit = rateLimit(ip, {
+    scope: "smart-search",
     maxRequests: 20,
     windowMs: 10 * 60 * 1000,
   });

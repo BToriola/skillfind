@@ -24,6 +24,11 @@ export type Freelancer = {
   is_approved: boolean;
   is_verified?: boolean;
   verified_at?: string | null;
+  /** Maintained by the sync_portfolio_count trigger (006) — never written
+   *  from the client, which the protect_freelancer_columns trigger enforces. */
+  portfolio_count?: number;
+  /** Generated column: portfolio_count > 0. The directory's primary sort. */
+  has_portfolio?: boolean;
   created_at: string;
 };
 

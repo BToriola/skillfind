@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { getUserFreelancerProfile, deleteFreelancer, uploadAvatar } from "@/utils/storage";
 import { supabase } from "@/utils/supabase";
-import { Freelancer } from "@/types";
+import { Freelancer, RateType } from "@/types";
 import Image from "next/image";
 import AIBioGenerator from "@/components/AIBioGenerator";
 import AIPriceSuggester from "@/components/AIPriceSuggester";
 import PortfolioSection from "@/components/PortfolioSection";
 import PricingFields from "@/components/PricingFields";
+import ProfileStrength from "@/components/ProfileStrength";
 import VerificationSection from "@/components/VerificationSection";
 import { AlertTriangle, Loader2, Link2, Copy, Check, MessageCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,11 +26,20 @@ const inputClass = "w-full px-3.5 py-2.5 text-sm text-slate-900 bg-white border 
 
 
 
-export default function ProfilePage() {
+function ProfileContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Set by the post-registration redirect — jumps this page straight to the
+  // portfolio card with the add-project form already open.
+  const isNew = searchParams.get("new") === "true";
   const { user, loading } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const portfolioRef = useRef<HTMLDivElement>(null);
   const [freelancer, setFreelancer] = useState<Freelancer | null>(null);
+  // null until PortfolioSection reports in, so the strength meter never
+  // flashes a wrong "0 projects" score on the way up.
+  const [portfolioCount, setPortfolioCount] = useState<number | null>(null);
+  const [openFormSignal, setOpenFormSignal] = useState(0);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -68,6 +78,17 @@ export default function ProfilePage() {
       });
     }
   }, [user, router]);
+
+  // Scroll to the portfolio once it exists. Waits on `freelancer` because
+  // PortfolioSection only mounts after the profile has loaded, so the ref is
+  // still null on the first pass through here.
+  useEffect(() => {
+    if (!isNew || !freelancer) return;
+    const id = setTimeout(() => {
+      portfolioRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 300);
+    return () => clearTimeout(id);
+  }, [isNew, freelancer]);
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -116,9 +137,10 @@ export default function ProfilePage() {
     setSaving(true);
 
     const { rate_type, rate_min, rate_max, ...rest } = form;
+    const pricing = toPricingPayload({ rate_type, rate_min, rate_max });
     const { error } = await supabase
       .from("freelancers")
-      .update({ ...rest, ...toPricingPayload({ rate_type, rate_min, rate_max }) })
+      .update({ ...rest, ...pricing })
       .eq("id", freelancer.id);
 
     setSaving(false);
@@ -127,6 +149,11 @@ export default function ProfilePage() {
       toast.error("Failed to save changes. Please try again.");
       return;
     }
+
+    // Mirror the write into local state — toPricingPayload can quietly drop a
+    // half-entered rate, so what's on screen isn't always what was stored, and
+    // the strength meter reads the stored shape.
+    setFreelancer(prev => (prev ? { ...prev, ...rest, ...pricing } : prev));
 
     toast.success("Profile updated successfully!");
   }
@@ -153,6 +180,28 @@ export default function ProfilePage() {
   const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(
     `I'm ${form.name || "on"} SkillFind — ${form.skill || "check out my profile"}. See my work and contact me here: ${profileUrl}`
   )}`;
+
+  // Scored off the live form rather than the saved row, so the bar moves while
+  // they type instead of only after a save — the immediate feedback is the
+  // point of showing a number at all. The photo and the portfolio count are
+  // saved the instant they change, so those two are always truthful.
+  const strengthProfile: Freelancer | null = freelancer
+    ? {
+        ...freelancer,
+        name: form.name,
+        skill: form.skill,
+        state: form.state,
+        city: form.city,
+        bio: form.bio,
+        rate_type: (form.rate_type || null) as RateType | null,
+        avatar_url: avatarUrl,
+      }
+    : null;
+
+  function handleJumpToPortfolio() {
+    setOpenFormSignal(n => n + 1);
+    portfolioRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   function handleCopyProfileLink() {
     if (!profileUrl) return;
@@ -199,6 +248,17 @@ export default function ProfilePage() {
             Delete Profile
           </button>
         </div>
+
+        {/* Profile strength — sits above the share link on purpose: the link
+            is the reward, and this is the thing that makes the link worth
+            sending. Held back until the portfolio count is known. */}
+        {strengthProfile && portfolioCount !== null && (
+          <ProfileStrength
+            freelancer={strengthProfile}
+            portfolioCount={portfolioCount}
+            onAddProject={handleJumpToPortfolio}
+          />
+        )}
 
         {/* Share link — this is the actual pitch: a page you can send a
             client instead of the Share button, which only ever lived on
@@ -448,10 +508,14 @@ export default function ProfilePage() {
 
         {/* Portfolio Section */}
         {freelancer && (
-          <div className="mt-6">
+          <div id="portfolio" ref={portfolioRef} className="mt-6 scroll-mt-20">
             <PortfolioSection
               freelancerId={freelancer.id}
               canEdit={true}
+              skill={form.skill}
+              autoOpenForm={isNew}
+              openFormSignal={openFormSignal}
+              onCountChange={setPortfolioCount}
             />
           </div>
         )}
@@ -502,5 +566,19 @@ export default function ProfilePage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+// useSearchParams needs a Suspense boundary above it — same wrapper the
+// register page uses.
+export default function ProfilePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-slate-500 text-sm">Loading your profile...</p>
+      </div>
+    }>
+      <ProfileContent />
+    </Suspense>
   );
 }

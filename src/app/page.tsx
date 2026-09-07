@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { signOut } from "@/utils/auth";
-import { getFreelancers, getUserFreelancerProfile } from "@/utils/storage";
+import { getFreelancers, getUserFreelancerProfile, getPortfolioCount } from "@/utils/storage";
 import { Freelancer } from "@/types";
+import { getProfileStrength, ProfileStrength } from "@/utils/profileStrength";
 import { CATEGORIES, NIGERIAN_STATES } from "@/constants";
 import FreelancerCard from "@/components/FreelancerCard";
 import ProfileModal from "@/components/ProfileModal";
@@ -24,6 +25,10 @@ export default function HomePage() {
   const [selected, setSelected] = useState<Freelancer | null>(null);
   const [hasProfile, setHasProfile] = useState(false);
   const [showProfileNudge, setShowProfileNudge] = useState(false);
+  const [strength, setStrength] = useState<ProfileStrength | null>(null);
+  // Dismiss lasts for this visit only — deliberately not persisted, so an
+  // unfinished profile gets asked about again next time they come back.
+  const [strengthNudgeDismissed, setStrengthNudgeDismissed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -40,27 +45,29 @@ export default function HomePage() {
       setLoadingFreelancers(false);
     });
     if (user) {
-      getUserFreelancerProfile(user.id).then(profile => {
+      getUserFreelancerProfile(user.id).then(async profile => {
         setHasProfile(!!profile);
-        if (!profile) setShowProfileNudge(true);
+        if (!profile) { setShowProfileNudge(true); return; }
+        const count = await getPortfolioCount(profile.id);
+        setStrength(getProfileStrength(profile, count));
       });
     }
   }, [user]);
 
-  // Array.prototype.sort is stable (guaranteed since ES2019), so this only
-  // moves verified freelancers ahead of unverified ones — it doesn't disturb
-  // the newest-first ordering getFreelancers() already applied within each group.
-  const filtered = freelancers
-    .filter(f => {
-      const matchSearch =
-        f.name.toLowerCase().includes(search.toLowerCase()) ||
-        f.skill.toLowerCase().includes(search.toLowerCase()) ||
-        (f.city?.toLowerCase().includes(search.toLowerCase()) ?? false);
-      const matchCat = category === "All Categories" || f.category === category;
-      const matchState = state === "All States" || f.state === state;
-      return matchSearch && matchCat && matchState;
-    })
-    .sort((a, b) => Number(!!b.is_verified) - Number(!!a.is_verified));
+  // No re-sort here on purpose. getFreelancers() now orders by
+  // has_portfolio → is_verified → created_at in SQL, and .filter() preserves
+  // that order. The verified-first sort that used to live here would hoist
+  // every verified listing back above the ones showing actual work, undoing
+  // the ranking the query just asked for.
+  const filtered = freelancers.filter(f => {
+    const matchSearch =
+      f.name.toLowerCase().includes(search.toLowerCase()) ||
+      f.skill.toLowerCase().includes(search.toLowerCase()) ||
+      (f.city?.toLowerCase().includes(search.toLowerCase()) ?? false);
+    const matchCat = category === "All Categories" || f.category === category;
+    const matchState = state === "All States" || f.state === state;
+    return matchSearch && matchCat && matchState;
+  });
 
   // rounded-xl matches the inputClass used by every other text field in the
   // app (register/profile/auth forms) — a pill (rounded-full) was previously
@@ -211,6 +218,35 @@ export default function HomePage() {
                 className="bg-white text-green-600 font-semibold text-xs px-4 py-2 rounded-lg hover:bg-green-50 transition cursor-pointer border-none"
               >
                 Complete My Profile →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* The other half of the same problem: they've registered, so the banner
+          above no longer fires, but the listing is still half-empty. Names the
+          single highest-value gap rather than saying "finish your profile". */}
+      {hasProfile && strength && !strength.isComplete && !strengthNudgeDismissed && (
+        <div className="bg-slate-900 text-white px-6 py-3">
+          <div className="max-w-6xl mx-auto flex items-center justify-between gap-4 flex-wrap">
+            <p className="text-sm font-medium">
+              Your profile is <span className="font-bold text-green-400">{strength.percent}% complete</span>
+              {strength.topMissing && ` — ${strength.topMissing.cta.toLowerCase()}`}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => router.push("/profile")}
+                className="bg-green-500 hover:bg-green-400 text-slate-900 font-semibold text-xs px-4 py-2 rounded-lg transition cursor-pointer border-none"
+              >
+                Finish My Profile →
+              </button>
+              <button
+                onClick={() => setStrengthNudgeDismissed(true)}
+                aria-label="Dismiss"
+                className="p-2 text-white/50 hover:text-white bg-transparent border-none cursor-pointer transition"
+              >
+                <X size={16} />
               </button>
             </div>
           </div>

@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { Freelancer } from "@/types";
 import { getInitials, formatPricing, getCategoryColor, formatLocation } from "@/utils/helpers";
 import { motion } from "framer-motion";
-import { MapPin } from "lucide-react";
+import { Briefcase, MapPin } from "lucide-react";
 
 export default function FreelancerCard({ freelancer, onClick }: { freelancer: Freelancer; onClick: () => void }) {
   const router = useRouter();
@@ -21,6 +21,7 @@ export default function FreelancerCard({ freelancer, onClick }: { freelancer: Fr
 
   const hasLocation = !!freelancer.state?.trim();
   const hasBio = !!freelancer.bio?.trim();
+  const projectCount = freelancer.portfolio_count ?? 0;
 
   return (
     <motion.div
@@ -30,16 +31,30 @@ export default function FreelancerCard({ freelancer, onClick }: { freelancer: Fr
       transition={{ duration: 0.2 }}
       className="h-full bg-white border border-gray-200 hover:border-green-200 rounded-2xl p-6 cursor-pointer flex flex-col"
     >
-      {/* Top row */}
-      <div className="flex items-center justify-between mb-3">
-        <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${badgeColor}`}>
+      {/* Top row — the category can truncate, the badges can't: they're the
+          two signals a client scans the grid for. */}
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <span className={`text-xs font-medium px-2.5 py-1 rounded-full truncate ${badgeColor}`}>
           {freelancer.category}
         </span>
-        {freelancer.is_verified && (
-          <span className="text-xs font-semibold bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full">
-            ✓ Verified
-          </span>
-        )}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {projectCount > 0 && (
+            <span
+              // Reads as "shows real work" at a glance, and is the visible
+              // half of the portfolio ranking — an empty listing simply has
+              // nothing here rather than being marked as lacking.
+              aria-label={`${projectCount} project${projectCount === 1 ? "" : "s"} in portfolio`}
+              className="text-xs font-semibold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full flex items-center gap-1 whitespace-nowrap"
+            >
+              <Briefcase size={11} /> {projectCount}
+            </span>
+          )}
+          {freelancer.is_verified && (
+            <span className="text-xs font-semibold bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full whitespace-nowrap">
+              ✓ Verified
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Skill headline — capped at 2 lines no matter what someone typed */}

@@ -127,7 +127,11 @@ function RegisterContent() {
     }
 
     setSubmitted(true);
-    setTimeout(() => router.push("/"), 2000);
+    // Straight into the portfolio, not the directory. Registration collects
+    // everything except work samples, and a freelancer sent to "/" here has
+    // no reason to ever open /profile — which is the only place the portfolio
+    // uploader exists. ?new=true scrolls to it and opens the form for them.
+    setTimeout(() => router.push("/profile?new=true"), 1600);
   }
 
   if (loading || checkingProfile) {
@@ -162,7 +166,9 @@ function RegisterContent() {
         <div className="bg-white rounded-2xl p-12 text-center max-w-sm w-full">
           <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4">✓</div>
           <h2 className="text-xl font-bold text-slate-900 mb-2">Profile Created!</h2>
-          <p className="text-sm text-slate-500">Taking you to the directory...</p>
+          <p className="text-sm text-slate-500">
+            One last step — let&apos;s add your first project. It&apos;s what makes clients choose you.
+          </p>
         </div>
       </div>
     );

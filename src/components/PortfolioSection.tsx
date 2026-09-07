@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Briefcase, ImagePlus, Pencil, X } from "lucide-react";
+import { Briefcase, ImagePlus, Loader2, Pencil, Sparkles, X } from "lucide-react";
+import toast from "react-hot-toast";
 import { supabase } from "@/utils/supabase";
 import { safeExternalUrl } from "@/utils/helpers";
 import { PortfolioItem } from "@/types";
@@ -10,14 +11,32 @@ import { PortfolioItem } from "@/types";
 type Props = {
   freelancerId: string;
   canEdit: boolean;
+  /** The freelancer's skill title — context for the AI description writer. */
+  skill?: string;
+  /** Opens the add-project form on mount (used right after registration). */
+  autoOpenForm?: boolean;
+  /** Bumping this number opens the form — how the profile page's
+   *  "Add a project" CTA reaches in from outside this component. */
+  openFormSignal?: number;
+  /** Fires whenever the item count changes, so the profile strength meter
+   *  outside this component moves the moment a project is added or deleted. */
+  onCountChange?: (count: number) => void;
 };
 
-export default function PortfolioSection({ freelancerId, canEdit }: Props) {
+export default function PortfolioSection({
+  freelancerId,
+  canEdit,
+  skill,
+  autoOpenForm = false,
+  openFormSignal = 0,
+  onCountChange,
+}: Props) {
   const [items, setItems] = useState<PortfolioItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(autoOpenForm && canEdit);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [generatingDescription, setGeneratingDescription] = useState(false);
   const [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -45,6 +64,12 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
   const originalImageUrlRef = useRef<string | null>(null);
   const displayImage = imagePreview || existingImageUrl;
 
+  // Held in a ref rather than read directly, so fetchItems stays stable even
+  // when the parent passes a fresh callback on every render — otherwise the
+  // effect below would refetch in a loop.
+  const onCountChangeRef = useRef(onCountChange);
+  onCountChangeRef.current = onCountChange;
+
   const fetchItems = useCallback(async () => {
     Promise.resolve().then(() => setLoading(true));
     const { data } = await supabase
@@ -53,6 +78,7 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
       .eq("freelancer_id", freelancerId)
       .order("created_at", { ascending: false });
     setItems(data || []);
+    onCountChangeRef.current?.(data?.length || 0);
     setLoading(false);
   }, [freelancerId]);
 
@@ -135,6 +161,19 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
     setShowForm(true);
   }
 
+  // The parent's "Add a project" CTA bumps openFormSignal. Guarded on > 0 so
+  // the initial render doesn't count as a request — that case is autoOpenForm's
+  // job, which seeds showForm directly instead of going through an effect.
+  useEffect(() => {
+    // Guarded on showForm as well: openAddForm resets the fields, so a second
+    // press while the form is already open would wipe whatever they'd typed.
+    if (openFormSignal > 0 && canEdit && !showForm) {
+      openAddForm();
+    }
+    // openAddForm is redeclared every render; only the signal should retrigger.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openFormSignal, canEdit]);
+
   // A replaced or removed photo would otherwise leave its old file orphaned
   // in storage — same cleanup handleDelete does, just triggered by a replace.
   // Pulled out of handleSubmit as its own function: inlined, this exact
@@ -161,10 +200,44 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
     setShowForm(true);
   }
 
+  // Same shape as the bio generator, minus the extra questions — it works off
+  // the title and tools the freelancer has already typed, so writing a
+  // description costs one tap instead of a paragraph of thinking.
+  async function handleGenerateDescription() {
+    if (!form.title.trim()) {
+      toast.error("Add a project title first — the AI writes from it");
+      return;
+    }
+
+    setGeneratingDescription(true);
+
+    try {
+      const res = await fetch("/api/generate-project-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: form.title, tools: form.tools_used, skill }),
+      });
+      const data = await res.json();
+      if (data.description) {
+        setForm(prev => ({ ...prev, description: data.description }));
+      } else {
+        toast.error(data.error || "Couldn't write a description. Try again.");
+      }
+    } catch {
+      toast.error("Something went wrong. Try again.");
+    }
+
+    setGeneratingDescription(false);
+  }
+
+  // Title is the only hard requirement. Description used to be mandatory too,
+  // which meant a freelancer with a photo and a name for the job still had to
+  // write prose before anything could be saved — and mostly saved nothing at
+  // all. One project with a thin description beats a perfect empty form; the
+  // AI writer below and the profile strength meter pull them back to fill it in.
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.title.trim()) { setError("Project title is required"); return; }
-    if (!form.description.trim()) { setError("Description is required"); return; }
 
     setSaving(true);
     setError("");
@@ -349,9 +422,35 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
 
               {/* Description */}
               <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-slate-600">
-                  What did you build and what was the result?
-                </label>
+                <div className="flex items-center justify-between gap-2">
+                  <label className="text-xs font-medium text-slate-600">
+                    What did you build and what was the result?{" "}
+                    <span className="text-slate-400">(Optional)</span>
+                  </label>
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={handleGenerateDescription}
+                    disabled={generatingDescription}
+                    className="shrink-0 flex items-center gap-1.5 text-xs font-semibold text-purple-600 hover:text-purple-700 disabled:opacity-60 bg-purple-50 hover:bg-purple-100 px-3 py-1.5 rounded-lg transition cursor-pointer border-none"
+                  >
+                    {generatingDescription ? (
+                      <>
+                        <motion.span
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          className="inline-block"
+                        >
+                          <Loader2 size={14} />
+                        </motion.span>
+                        Writing...
+                      </>
+                    ) : (
+                      <><Sparkles size={14} /> Write with AI</>
+                    )}
+                  </motion.button>
+                </div>
                 <textarea
                   value={form.description}
                   onChange={e => setForm({ ...form, description: e.target.value })}
@@ -359,6 +458,9 @@ export default function PortfolioSection({ freelancerId, canEdit }: Props) {
                   placeholder="e.g. Built a full e-commerce store with payment integration. Client saw 40% increase in online sales within the first month."
                   className={inputClass}
                 />
+                <p className="text-xs text-slate-400">
+                  You can save without this and add it later — but clients read it before they call.
+                </p>
               </div>
 
               {/* Tools Used */}
