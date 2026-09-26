@@ -31,6 +31,11 @@ export default function HomePage() {
   const [strengthNudgeDismissed, setStrengthNudgeDismissed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  // AI search
+  const [aiQuery, setAiQuery] = useState("");
+  const [aiSearching, setAiSearching] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState("");
+  const [showRefine, setShowRefine] = useState(false);
 
   useEffect(() => {
     function onScroll() { setScrolled(window.scrollY > 8); }
@@ -76,6 +81,34 @@ export default function HomePage() {
   // across browsers — ChevronDown below replaces it, positioned absolutely
   // and set pointer-events-none so clicks still reach the select.
   const selectClass = "pl-4 pr-9 py-2.5 text-sm text-slate-700 bg-white border border-slate-200 rounded-xl outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/10 transition appearance-none cursor-pointer w-full md:w-auto";
+
+  async function handleAiSearch(e: React.FormEvent) {
+    e.preventDefault();
+    if (!aiQuery.trim()) return;
+
+    setAiSearching(true);
+    setAiExplanation("");
+
+    try {
+      const res = await fetch("/api/smart-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: aiQuery }),
+      });
+      const data = await res.json();
+
+      setSearch(data.keywords?.join(" ") ?? "");
+      // AI returns "All" — normalise to the sentinel the filter expects.
+      setCategory(data.category === "All" ? "All Categories" : (data.category || "All Categories"));
+      setState(data.state || "All States");
+      setAiExplanation(data.explanation || "");
+    } catch {
+      // Fall back to a plain keyword search — never leave the user stuck.
+      setSearch(aiQuery);
+    }
+
+    setAiSearching(false);
+  }
 
   return (
     <div className="min-h-screen bg-[#f5f5f0]">
@@ -253,28 +286,23 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Hero — max-w-6xl matches the nav/filters/grid below so the page's
-          outer edges stay constant while scrolling; the paragraph keeps its
-          own narrower max-w-2xl for readability. */}
-      <section className="max-w-6xl mx-auto text-center px-6 pt-6 pb-4 md:pt-16 md:pb-6">
-        <span className="inline-block bg-green-100 text-green-700 text-xs md:text-sm font-semibold px-4 py-1.5 rounded-full uppercase tracking-wide mb-4">
-          Nigeria&apos;s Freelancer Directory — Free to Join
+      {/* Hero */}
+      <section className="max-w-2xl mx-auto text-center px-6 pt-6 pb-4 md:pt-16 md:pb-6">
+        <span className="inline-block bg-green-100 text-green-700 text-xs font-medium px-3 py-1 rounded-full uppercase tracking-wide mb-4">
+          🇳🇬 Nigeria&apos;s Freelancer Directory — Free to Join
         </span>
-        {/* Line 1 speaks to clients searching (now genuinely local, since
-            freelancers can list a City/Area) — line 2 speaks to freelancers
-            deciding whether to join (broad reach, across the country). Two
-            different audiences, kept as two lines on purpose. */}
-        <h1 className="font-bricolage text-3xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 leading-tight tracking-tight mb-4">
-          Find skilled professionals near you.<br className="hidden sm:block" />
-          <span className="text-green-600">Get hired across Nigeria.</span>
+        {/* Headline speaks directly to clients: describe the job, we match
+            the professional. The sub-copy keeps the freelancer pitch to one
+            supporting sentence so it doesn't compete for the primary action. */}
+        <h1 className="font-bricolage text-3xl md:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-4">
+          Tell us what you need.<br />
+          <span className="text-green-600">We&apos;ll find who can do it.</span>
         </h1>
-        <p className="text-base md:text-lg text-slate-500 max-w-2xl mx-auto">
-          SkillFind connects Nigerian freelancers with clients who need their skills —
-          search by name, skill or area to find someone near you, with no bidding
-          wars and no commissions, ever.
+        <p className="text-base text-slate-500">
+          Describe the job in your own words — SkillFind matches you with the right Nigerian professional.
         </p>
         {!user && (
-          <div className="flex items-center justify-center gap-3 flex-wrap mt-8">
+          <div className="flex items-center justify-center gap-3 flex-wrap mt-6">
             <button
               onClick={() => router.push("/auth")}
               className="bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2.5 rounded-lg transition cursor-pointer border-none text-xs"
@@ -293,17 +321,65 @@ export default function HomePage() {
         )}
       </section>
 
-      {/* Stats bar — was `hidden md:block`, so this trust signal never
-          appeared on mobile at all. Each stat used to be two stacked lines
-          (a big number, then a label) inside a 2-col grid, which used roughly
-          4x the vertical space it needed on a phone. Collapsed each stat to
-          one inline unit ("13+ Freelancers") in a single wrapping row instead
-          — always a pill, since it's now short enough to rarely need two
-          lines even on a narrow phone. Outer wrapper matches the
-          hero/filters/grid max-w-6xl; the pill itself stays cozy at max-w-2xl
-          so it doesn't stretch edge-to-edge on wide screens. */}
-      <div className="max-w-6xl mx-auto px-6 pb-6">
-        <div className="max-w-2xl mx-auto bg-white border border-gray-200 rounded-xl px-5 py-2.5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5">
+      {/* AI Search — primary interaction */}
+      <div className="max-w-2xl mx-auto px-6 pb-3">
+        <form onSubmit={handleAiSearch} className="relative">
+          <input
+            value={aiQuery}
+            onChange={e => setAiQuery(e.target.value)}
+            placeholder="e.g. I need someone to design my restaurant's logo in Lagos"
+            className="w-full pl-5 pr-32 py-4 text-sm text-slate-900 bg-white border-2 border-gray-200 rounded-2xl outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100 placeholder:text-slate-300 transition shadow-sm"
+          />
+          <button
+            type="submit"
+            disabled={aiSearching || !aiQuery.trim()}
+            className="absolute right-2 top-2 bottom-2 px-5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-semibold text-sm rounded-xl transition cursor-pointer border-none flex items-center gap-1.5"
+          >
+            {aiSearching ? (
+              <motion.span
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                style={{ display: "inline-block" }}
+              >
+                ⟳
+              </motion.span>
+            ) : "✨"}
+            Search
+          </button>
+        </form>
+
+        {/* AI read-back of what it understood — builds trust in the match */}
+        <AnimatePresence>
+          {aiExplanation && (
+            <motion.p
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="text-sm text-slate-500 mt-3 text-center"
+            >
+              {aiExplanation}
+              {(category !== "All Categories" || state !== "All States") && (
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setCategory("All Categories");
+                    setState("All States");
+                    setAiQuery("");
+                    setAiExplanation("");
+                  }}
+                  className="ml-2 text-green-600 font-medium hover:underline bg-transparent border-none cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Stats bar */}
+      <div className="max-w-2xl mx-auto px-6 pb-4">
+        <div className="bg-white border border-gray-200 rounded-xl px-5 py-2.5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5">
           <div className="flex items-center gap-1.5">
             <span className="font-bricolage text-sm font-bold text-slate-900">{freelancers.length}+</span>
             <span className="text-xs text-slate-500">Freelancers</span>
@@ -323,47 +399,78 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Filters */}
-      <div id="directory" className="max-w-6xl mx-auto px-6 pb-3">
-        <div className="flex flex-col md:flex-row gap-2 md:gap-3 mb-3">
-          <div className="relative flex items-center flex-1 min-w-60">
-            <Search className="absolute left-3 text-slate-500" size={16} />
-            <input
-              className="w-full pl-9 pr-9 py-2.5 md:py-3.5 text-sm text-slate-900 bg-white border border-slate-200 rounded-xl outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/10 placeholder:text-slate-300 transition"
-              placeholder="Search by name, skill or area..."
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-            <AnimatePresence>
-              {search && (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.5 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
-                  transition={{ duration: 0.15 }}
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 text-slate-500 hover:text-slate-600 bg-transparent border-none"
-                >
-                  <X size={14} />
-                </motion.button>
-              )}
-            </AnimatePresence>
-          </div>
-          <div className="flex gap-2 w-full md:w-auto">
-            <div className="relative flex-1">
-              <select className={`${selectClass} w-full py-2.5 md:py-3.5`} value={category} onChange={e => setCategory(e.target.value)}>
-                {["All Categories", ...CATEGORIES].map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
-            </div>
-            <div className="relative flex-1">
-              <select className={`${selectClass} w-full py-2.5 md:py-3.5`} value={state} onChange={e => setState(e.target.value)}>
-                {["All States", ...NIGERIAN_STATES].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-              <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
-            </div>
-          </div>
-        </div>
+      {/* Refine — demoted, opt-in, collapsed by default.
+          id="directory" moves here so the "Browse Freelancers" scroll button
+          still lands in the right place. */}
+      <div id="directory" className="max-w-2xl mx-auto px-6 pb-6 text-center">
+        <button
+          onClick={() => setShowRefine(!showRefine)}
+          className="text-xs text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer"
+        >
+          {showRefine ? "Hide filters ▲" : "Or refine manually ▼"}
+        </button>
+
+        <AnimatePresence>
+          {showRefine && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="flex flex-wrap justify-center gap-2 pt-3">
+                {/* Keyword */}
+                <div className="relative flex items-center">
+                  <Search className="absolute left-3 text-slate-400 pointer-events-none" size={14} />
+                  <input
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder="Keyword..."
+                    className="pl-8 pr-9 py-2 text-sm border border-gray-200 rounded-xl outline-none focus:border-green-500 min-w-40"
+                  />
+                  <AnimatePresence>
+                    {search && (
+                      <motion.button
+                        initial={{ opacity: 0, scale: 0.5 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                        transition={{ duration: 0.15 }}
+                        onClick={() => setSearch("")}
+                        className="absolute right-2.5 text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer"
+                      >
+                        <X size={12} />
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </div>
+                {/* Category */}
+                <div className="relative">
+                  <select
+                    value={category}
+                    onChange={e => setCategory(e.target.value)}
+                    className={selectClass}
+                  >
+                    {["All Categories", ...CATEGORIES].map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+                </div>
+                {/* State */}
+                <div className="relative">
+                  <select
+                    value={state}
+                    onChange={e => setState(e.target.value)}
+                    className={selectClass}
+                  >
+                    {["All States", ...NIGERIAN_STATES].map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Result count — shown whenever any filter is active */}
         <AnimatePresence>
           {(search || category !== "All Categories" || state !== "All States") && (
             <motion.p
@@ -371,7 +478,7 @@ export default function HomePage() {
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="text-[13px] text-slate-500 overflow-hidden"
+              className="text-[13px] text-slate-500 mt-3 overflow-hidden"
             >
               {filtered.length} freelancer{filtered.length !== 1 ? "s" : ""} found
             </motion.p>

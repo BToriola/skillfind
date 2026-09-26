@@ -1,31 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit } from "@/utils/rateLimit";
 import { groqChat } from "@/utils/groq";
-import { CATEGORIES } from "@/constants";
+import { CATEGORIES, NIGERIAN_STATES } from "@/constants";
 
 export async function POST(req: NextRequest) {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    || req.headers.get("x-real-ip")
-    || "unknown";
+  const ip =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    "unknown";
 
-  // Allow max 20 requests per 10 minutes for search (more generous). Its own
-  // budget now — searching is the highest-volume route, so sharing a pool meant
-  // it starved the two one-off writers on the register and profile forms.
   const limit = rateLimit(ip, {
     scope: "smart-search",
-    maxRequests: 20,
+    maxRequests: 30,
     windowMs: 10 * 60 * 1000,
   });
 
   if (!limit.allowed) {
     const resetInMinutes = Math.ceil(limit.resetIn / 1000 / 60);
     return NextResponse.json(
-      { keyword: "", category: "All", error: `Too many requests. Please wait ${resetInMinutes} minutes.` },
+      { error: `Too many searches. Please wait ${resetInMinutes} minutes.` },
       { status: 429 }
     );
   }
 
   const { query } = await req.json();
+
+  if (!query || !query.trim()) {
+    return NextResponse.json({
+      keywords: [],
+      category: "All",
+      state: "All States",
+      explanation: "",
+    });
+  }
 
   try {
     const content = await groqChat({
@@ -34,28 +41,40 @@ export async function POST(req: NextRequest) {
       messages: [
         {
           role: "system",
-          content: `You are a search assistant for SkillFind, a Nigerian freelancer directory.
-When given a natural language query, extract the most relevant search keyword and category.
-Always respond in valid JSON only with this exact format:
-{"keyword": "search term", "category": "category name or All"}
-Available categories: ${CATEGORIES.join(", ")}, All`,
+          content: `You are the search understanding layer for SkillFind, a Nigerian freelancer directory.
+Given a client's plain-language request, extract structured search intent.
+
+Categories (pick exactly one, or "All"): ${CATEGORIES.join(", ")}, All
+States (pick exactly one if mentioned, or "All States"): ${NIGERIAN_STATES.join(", ")}, All States
+
+Respond ONLY with valid JSON, no prose, in this exact shape:
+{"keywords": ["word1","word2"], "category": "CategoryName", "state": "StateName", "explanation": "one short friendly sentence explaining what you searched for"}
+
+"keywords" should be 1–4 specific skill/role words (e.g. ["logo","branding"] not the whole sentence).
+"explanation" should read naturally and be shown to the user (e.g. "Looking for logo designers in Lagos").`,
         },
         {
           role: "user",
-          content: `Extract search intent from this query: "${query}"`,
+          content: query,
         },
       ],
     });
 
     const parsed = JSON.parse(content || "{}");
-    return NextResponse.json({
-      keyword: parsed.keyword || query,
-      category: parsed.category || "All",
-    });
 
+    return NextResponse.json({
+      keywords: Array.isArray(parsed.keywords) ? parsed.keywords : [query],
+      category: CATEGORIES.includes(parsed.category) ? parsed.category : "All",
+      state: NIGERIAN_STATES.includes(parsed.state) ? parsed.state : "All States",
+      explanation: typeof parsed.explanation === "string" ? parsed.explanation : "",
+    });
   } catch (err) {
-    // Falling back to the raw query still gives a usable search.
     console.error("smart-search failed:", err);
-    return NextResponse.json({ keyword: query, category: "All" });
+    return NextResponse.json({
+      keywords: [query],
+      category: "All",
+      state: "All States",
+      explanation: "",
+    });
   }
 }
